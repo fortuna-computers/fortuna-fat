@@ -1,6 +1,6 @@
 ### Layer 0
 
-- Create basic infrastructe
+- Create basic infrastructe (ok)
 - Implement layer 0
 - Implement tests for layer 0
 - Implement size calculator on Makefile
