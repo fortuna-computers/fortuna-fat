@@ -1,0 +1,12 @@
+name: Automated tests
+on:
+  push:
+    branches:
+      - master
+jobs:
+  AutomatedTesting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - run: make test
