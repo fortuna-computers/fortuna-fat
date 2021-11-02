@@ -14,9 +14,10 @@ typedef enum FFat32Op {
 } FFat32Op;
 
 typedef enum FFatResult {
-    F_OK            = 0x0,
-    F_INVALID_OP    = 0x1,
-    F_IO_ERROR      = 0x2,
+    F_OK              = 0x00,
+    F_INVALID_OP      = 0x01,
+    F_IO_ERROR        = 0x02,
+    F_NOT_IMPLEMENTED = 0xff,
 } FFatResult;
 
 typedef struct FFat {
@@ -32,8 +33,8 @@ typedef struct FDateTime {} FDateTime;
 FFatResult ffat_op(FFat* f, FFat32Op op, FDateTime date_time);
 
 // please implement these three functions
-extern bool     f_raw_write(uint64_t sector, uint32_t const* buffer);
-extern bool     f_raw_read(uint64_t sector, uint32_t* buffer);
-extern uint64_t f_total_sectors();
+bool     raw_write(uint64_t sector, uint8_t const* buffer);
+bool     raw_read(uint64_t sector, uint8_t* buffer);
+uint64_t total_sectors();
 
 #endif
