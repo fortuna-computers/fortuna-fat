@@ -1,0 +1,4 @@
+#ifndef FORTUNA_FAT_FFAT_H
+#define FORTUNA_FAT_FFAT_H
+
+#endif //FORTUNA_FAT_FFAT_H
