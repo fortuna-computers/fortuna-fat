@@ -3,8 +3,8 @@
 - [X] Create basic infrastructe
 - [X] Implement layer 0
 - [X] Implement tests for layer 0
-- [ ] Implement size calculator on Makefile
-- [ ] Implement automated tests on github
+- [X] Implement size calculator on Makefile
+- [X] Implement automated tests on github
 
 ### Layer 1
 
