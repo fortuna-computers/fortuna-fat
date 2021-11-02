@@ -1,7 +1,7 @@
 # fortuna-fat32
 
-[![Automated tests](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/automated-tests.yml/badge.svg?branch=master)](https://github.com/fortuna-computers/fortuna-fat32/actions/workflows/automated-tests.yml)
-[![Code size](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/code-size.yml/badge.svg?branch=master)](https://github.com/fortuna-computers/fortuna-fat32/actions/workflows/code-size.yml)
+[![Automated tests](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/automated-tests.yml/badge.svg?branch=master)](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/automated-tests.yml)
+[![Code size](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/code-size.yml/badge.svg?branch=master)](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/code-size.yml)
 
 This is a very small very small (&lt; 8 kB) and memory conscious (&lt; 40 bytes + a shared 512 byte buffer) C11 code for accessing FAT images.
 Compilable to both AVR and x64, for use in Fortuna computers and emulator.
