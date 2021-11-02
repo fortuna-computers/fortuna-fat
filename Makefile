@@ -1,5 +1,5 @@
-LAYER         = 0
-FFAT_OBJ      = src/ffat.o src/layer0.o
+LAYER         = 1
+FFAT_OBJ      = src/ffat.o src/layer0.o src/layer1.o
 TEST_OBJ      = tests/main.o tests/image.o tests/scenario.o tests/test.o
 CFLAGS        = -std=c11
 CPPFLAGS      = -Wall -Wextra
