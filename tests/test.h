@@ -3,8 +3,7 @@
 
 #include <stddef.h>
 #include "../src/ffat.h"
-
-#define MAX_SCENARIOS 32
+#include "scenario.h"
 
 typedef struct Test {
     const char* name;
@@ -12,6 +11,6 @@ typedef struct Test {
     bool (*run_test)(FFat*);
 } Test;
 
-const Test test_list[];
+const Test* test_list;
 
 #endif //FORTUNA_FAT_TEST_H

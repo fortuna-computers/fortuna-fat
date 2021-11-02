@@ -4,6 +4,11 @@
 
 #include "image.h"
 
+void (*scenario_list[MAX_SCENARIOS])() = {
+        scenario_raw_sectors,
+        NULL
+};
+
 void scenario_raw_sectors()
 {
     scenario_name = "Image with raw sectors";
