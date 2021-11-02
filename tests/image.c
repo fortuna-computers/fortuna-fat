@@ -3,10 +3,8 @@
 #include <string.h>
 
 uint64_t img_sz = 0;
-uint8_t* img_data;
+uint8_t  img_data[256 * 1024 * 1024];
 bool     emulate_io_error = false;
-
-#define SECTOR_SZ 512
 
 bool raw_write(uint64_t sector, uint8_t const* buffer)
 {
@@ -28,4 +26,3 @@ uint64_t total_sectors()
 {
     return img_sz;
 }
-
