@@ -11,7 +11,7 @@ FFatResult last_result;
 #define X_OK(expr) { last_result = (expr); if (last_result != F_OK) return false; }
 #define ASSERT(expr) { if (!(expr)) return false; }
 
-bool test_raw_sector(FFat* f)
+static bool test_raw_sector(FFat* f)
 {
     f->F_RAWSEC = 0xaf;
     
@@ -31,14 +31,14 @@ bool test_raw_sector(FFat* f)
     return true;
 }
 
-bool test_raw_sector_past_end_of_image(FFat* f)
+static bool test_raw_sector_past_end_of_image(FFat* f)
 {
     f->F_RAWSEC = 0x100000;
     FFatResult r = ffat_op(f, F_READ_RAW, date_time);
     return r == F_IO_ERROR;
 }
 
-bool test_raw_sector_io_error(FFat* f)
+static bool test_raw_sector_io_error(FFat* f)
 {
     f->F_RAWSEC = 0;
     emulate_io_error = true;
@@ -48,11 +48,28 @@ bool test_raw_sector_io_error(FFat* f)
     return ok;
 }
 
+#if LAYER_IMPLEMENTED >= 1
+
+static bool test_bpb_parsing(FFat* f)
+{
+    return true;
+}
+
+#endif  // LAYER_IMPLEMENT >= 1
+
+static const Scenario layer0_scenarios[] = { scenario_raw_sectors, NULL };
+#if LAYER_IMPLEMENTED >= 1
+static const Scenario layer1_scenarios[] = { scenario_fat16, scenario_fat32, scenario_fat32_align512, scenario_fat32_spc1, scenario_fat32_spc8, scenario_fat32_2_partitions, NULL };
+#endif
+
 static const Test test_list_[] = {
-        { "Layer 0 sector access", { scenario_raw_sectors, NULL }, test_raw_sector },
-        { "Layer 0 sector past end of image", { scenario_raw_sectors, NULL }, test_raw_sector_past_end_of_image },
-        { "Layer 0 I/O error", { scenario_raw_sectors, NULL }, test_raw_sector_io_error },
-        { NULL, {}, NULL },
+        { "Layer 0 sector access", layer0_scenarios, test_raw_sector },
+        { "Layer 0 sector past end of image", layer0_scenarios, test_raw_sector_past_end_of_image },
+        { "Layer 0 I/O error", layer0_scenarios, test_raw_sector_io_error },
+#if LAYER_IMPLEMENTED >= 1
+        { "Check BPB parsing", layer1_scenarios, test_bpb_parsing },
+#endif
+        { NULL, NULL, NULL },
 };
 
 const Test* test_list = test_list_;

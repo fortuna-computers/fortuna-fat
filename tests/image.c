@@ -1,9 +1,15 @@
 #include "image.h"
 
 #include <string.h>
+#include <stdlib.h>
 
-uint64_t img_sz = 0;
-uint8_t  img_data[256 * 1024 * 1024];
+#include "ff/ff.h"
+#include "ff/diskio.h"
+
+#define IMG_SZ  (512 * 1024 * 1024)
+
+uint64_t img_sz = IMG_SZ / 512;
+uint8_t  img_data[IMG_SZ];
 bool     emulate_io_error = false;
 
 bool raw_write(uint64_t sector, uint8_t const* buffer)
@@ -25,4 +31,108 @@ bool raw_read(uint64_t sector, uint8_t* buffer)
 uint64_t total_sectors()
 {
     return img_sz;
+}
+
+//
+// functions below are implemented for FSFAT
+//
+
+PARTITION VolToPart[FF_VOLUMES] = {
+        {0, 1},
+        {0, 2}
+};
+
+/*-----------------------------------------------------------------------*/
+/* Get Drive Status                                                      */
+/*-----------------------------------------------------------------------*/
+
+DSTATUS disk_status (
+        BYTE pdrv		/* Physical drive nmuber to identify the drive */
+)
+{
+    (void) pdrv;
+    return 0;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/* Inidialize a Drive                                                    */
+/*-----------------------------------------------------------------------*/
+
+DSTATUS disk_initialize (
+        BYTE pdrv				/* Physical drive nmuber to identify the drive */
+)
+{
+    (void) pdrv;
+    return 0;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/* Read Sector(s)                                                        */
+/*-----------------------------------------------------------------------*/
+
+DRESULT disk_read (
+        BYTE pdrv,		/* Physical drive nmuber to identify the drive */
+        BYTE *buff,		/* Data buffer to store read data */
+        LBA_t sector,	/* Start sector in LBA */
+        UINT count		/* Number of sectors to read */
+)
+{
+    (void) pdrv;
+    memcpy(buff, &img_data[sector * 512], count * 512);
+    return RES_OK;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/* Write Sector(s)                                                       */
+/*-----------------------------------------------------------------------*/
+
+#if FF_FS_READONLY == 0
+
+DRESULT disk_write (
+        BYTE pdrv,			/* Physical drive nmuber to identify the drive */
+        const BYTE *buff,	/* Data to be written */
+        LBA_t sector,		/* Start sector in LBA */
+        UINT count			/* Number of sectors to write */
+)
+{
+    (void) pdrv;
+    memcpy(&img_data[sector * 512], buff, count * 512);
+    return RES_OK;
+}
+
+#endif
+
+
+/*-----------------------------------------------------------------------*/
+/* Miscellaneous Functions                                               */
+/*-----------------------------------------------------------------------*/
+
+DRESULT disk_ioctl (
+        BYTE pdrv,		/* Physical drive nmuber (0..) */
+        BYTE cmd,		/* Control code */
+        void *buff		/* Buffer to send/receive control data */
+)
+{
+    (void) pdrv;
+    
+    switch (cmd) {
+        case CTRL_SYNC:
+            return RES_OK;
+        case GET_SECTOR_COUNT:
+            *(LBA_t*) buff = img_sz;
+            return RES_OK;
+        default:
+            abort();
+    }
+}
+
+DWORD get_fattime (void)
+{
+    return 0;
 }
