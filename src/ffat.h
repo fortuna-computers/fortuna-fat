@@ -35,6 +35,7 @@ typedef enum FFatResult {
     F_DEVICE_FULL           = 0x12,
     F_SEEK_PAST_EOF         = 0x13,
     F_INVALID_FAT_CLUSTER   = 0x14,
+    F_NO_PARTITION          = 0x15,
 #endif
     F_NOT_IMPLEMENTED       = 0xff,
 } FFatResult;

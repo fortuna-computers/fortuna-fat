@@ -87,6 +87,7 @@ not create a new file in the directory. This needs to be done in a superior laye
 
 | Code | Response |
 |------|----------|
+| `F_NO_PARTITION`    | The partition does not exist. |
 | `F_UNSUPPORTED_FS`  | The file system is not FAT16 or FAT32. |
 | `F_BPS_NOT_512`     | Bytes per sector is not 512. |
 | `F_DEVICE_FULL`     | There's no space left in the device. |
