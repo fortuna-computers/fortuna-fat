@@ -1,6 +1,6 @@
 LAYER         = 1
 FFAT_OBJ      = src/ffat.o src/layer0.o src/layer1.o
-TEST_OBJ      = tests/main.o tests/image.o tests/scenario.o tests/test.o
+TEST_OBJ      = tests/main.o tests/image.o tests/scenario.o tests/test.o tests/ff/ff.o
 CFLAGS        = -std=c11
 CPPFLAGS      = -Wall -Wextra
 MCU           = atmega16

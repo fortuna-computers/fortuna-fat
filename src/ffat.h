@@ -51,7 +51,7 @@ typedef struct __attribute__((__packed__)) FFat {
         };
         uint8_t  F_PARM;
         uint16_t F_ROOT;
-        uint16_t F_SPC;
+        uint8_t  F_SPC;
 #endif
     };
     FFatResult   F_RSLT : 8;

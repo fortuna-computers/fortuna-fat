@@ -1,6 +1,9 @@
 #include "ffat.h"
 
 #include "layer0.h"
+#if LAYER_IMPLEMENTED >= 1
+#  include "layer1.h"
+#endif
 
 FFatResult ffat_op(FFat* f, FFat32Op op, FDateTime date_time)
 {

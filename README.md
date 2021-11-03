@@ -64,7 +64,7 @@ not create a new file in the directory. This needs to be done in a superior laye
 | `F_SCTR`  | Number of the sector inside the cluster. | 16-bit | Read/write |
 | `F_PARM`  | Additional parameter used in some operations. | 8-bit | Read/write |
 | `F_ROOT`  | Number of the root directory sector (relative to start of data sectors). | 16-bit | Read-only
-| `F_SPC`   | Number of sectors per cluster | 16-bit | Read-only
+| `F_SPC`   | Number of sectors per cluster | 8-bit | Read-only
 
 ### Supported operations
 
