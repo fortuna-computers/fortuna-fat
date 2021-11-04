@@ -1,13 +1,17 @@
 #include "test.h"
 
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "image.h"
 #include "scenario.h"
+#include "ff/ff.h"
 
 FDateTime date_time = {};
 FFatResult last_result;
 
+#define R(expr) { FRESULT r = (expr); if (r != FR_OK) { fprintf(stderr, "FSFAT error: %d\n", r); exit(EXIT_FAILURE); } }
 #define X_OK(expr) { last_result = (expr); if (last_result != F_OK) return false; }
 #define ASSERT(expr) { if (!(expr)) return false; }
 
@@ -80,6 +84,22 @@ static bool test_f_boot(FFat* f, Scenario scenario)
     return true;
 }
 
+static bool test_f_free(FFat* f, Scenario scenario)
+{
+    DWORD fsfat_free;
+    
+    X_OK(ffat_op(f, F_FREE, date_time))
+    uint32_t free_ = *(uint32_t *) f->buffer;
+    
+    FATFS* fatfs = calloc(1, sizeof(FATFS));
+    R(f_mount(fatfs, "", 0));
+    R(f_getfree("", &fsfat_free, &fatfs))
+    R(f_mount(NULL, "", 0));
+    free(fatfs);
+    
+    return fsfat_free == free_;
+}
+
 #endif  // LAYER_IMPLEMENT >= 1
 
 static const Scenario layer0_scenarios[] = { scenario_raw_sectors, NULL };
@@ -94,6 +114,7 @@ static const Test test_list_[] = {
 #if LAYER_IMPLEMENTED >= 1
         { "F_INIT", layer1_scenarios, test_f_init },
         { "F_BOOT", layer1_scenarios, test_f_boot },
+        { "F_FREE", layer1_scenarios, test_f_free },
 #endif
         { NULL, NULL, NULL },
 };

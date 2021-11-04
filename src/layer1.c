@@ -4,19 +4,6 @@
 
 #define TRY(expr) { FFatResult r = (expr); if (r != F_OK) return r; }
 
-#define PARTITION_ENTRY_1  0x1be
-
-#define BPB_BYTES_PER_SEC  11
-#define BPB_ROOT_ENT_COUNT 17
-#define BPB_FAT_SZ_16      22
-#define BPB_FAT_SZ_32      36
-#define BPB_TOT_SEC_16     19
-#define BPB_TOT_SEC_32     32
-#define BPB_RESVD_SEC_CNT  14
-#define BPB_NUM_FATS       16
-#define BPB_SEC_PER_CLUS   13
-
-
 typedef enum FFatType { FAT16, FAT32 } FFatType;
 
 typedef struct __attribute__((__packed__)) FPartition {
@@ -33,10 +20,23 @@ static FPartition partition;
 
 static inline uint32_t frombuf16(uint8_t const* buffer, uint16_t pos) { return *(uint16_t *) &buffer[pos]; }
 static inline uint32_t frombuf32(uint8_t const* buffer, uint16_t pos) { return *(uint32_t *) &buffer[pos]; }
+static inline void tobuf32(uint8_t* buffer, uint16_t pos, uint32_t value) { *(uint32_t *) &buffer[pos] = value; }
 
 // endregion
 
 // region -> Initialization & boot sector
+
+#define PARTITION_ENTRY_1  0x1be
+
+#define BPB_BYTES_PER_SEC  11
+#define BPB_ROOT_ENT_COUNT 17
+#define BPB_FAT_SZ_16      22
+#define BPB_FAT_SZ_32      36
+#define BPB_TOT_SEC_16     19
+#define BPB_TOT_SEC_32     32
+#define BPB_RESVD_SEC_CNT  14
+#define BPB_NUM_FATS       16
+#define BPB_SEC_PER_CLUS   13
 
 static FFatResult set_partition_start(FFat* f, uint8_t partition_number)
 {
@@ -108,6 +108,35 @@ FFatResult f_init(FFat* f)
 FFatResult f_boot(FFat* f)
 {
     TRY(load_boot_sector(f))
+    return F_OK;
+}
+
+// endregion
+
+// region -> FSINFO
+
+#define FSINFO_SECTOR       1
+#define FSI_FREE_COUNT  0x1e8
+#define FSI_NEXT_FREE   0x1ec
+
+static FFatResult load_fsinfo(FFat* f)
+{
+    f->F_RAWSEC = partition.abs_start_sector + FSINFO_SECTOR;
+    TRY(f_raw_read(f))
+    return F_OK;
+}
+
+static FFatResult write_fsinfo(FFat* f)
+{
+    f->F_RAWSEC = partition.abs_start_sector + FSINFO_SECTOR;
+    TRY(f_raw_write(f))
+    return F_OK;
+}
+
+FFatResult f_free(FFat* f)
+{
+    TRY(load_fsinfo(f))
+    tobuf32(f->buffer, 0, frombuf32(f->buffer, FSI_FREE_COUNT));
     return F_OK;
 }
 

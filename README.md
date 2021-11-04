@@ -73,6 +73,7 @@ not create a new file in the directory. This needs to be done in a superior laye
 | `F_INIT`     | Reads a partition boot sector and initialize the partition. When changing partitions, new `F_INIT` must be issued. | `F_PARM`: partition number |
 | `F_BOOT`     | Load boot sector into buffer. |
 | `F_FREE`     | Returns number of free clusters into first 4 bytes of buffer. |
+| `F_FSI_CALC` | Recalculate FSINFO values (free clusters and next free cluster). |
 | `F_CREATE`   | Create a new file in FAT. |
 | `F_SEEK_FW`  | Move* forward a number of sectors | `F_PARM`: number of sectors to move forward. |
 | `F_SEEK_EOF` | Move* until the end of file. |
