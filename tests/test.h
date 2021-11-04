@@ -8,7 +8,7 @@
 typedef struct Test {
     const char*     name;
     Scenario const* scenarios;
-    bool            (*run_test)(FFat*);
+    bool            (*run_test)(FFat*, Scenario scenario);
 } Test;
 
 const Test* test_list;

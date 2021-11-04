@@ -41,7 +41,7 @@ static inline uint32_t frombuf32(uint8_t const* buffer, uint16_t pos) { return *
 static FFatResult set_partition_start(FFat* f, uint8_t partition_number)
 {
     f->F_RAWSEC = 0; TRY(f_raw_read(f))
-    partition.abs_start_sector = frombuf32(f->buffer, PARTITION_ENTRY_1 + (partition_number * 4));
+    partition.abs_start_sector = frombuf32(f->buffer, PARTITION_ENTRY_1 + (partition_number * 4) + 8);
     if (partition.abs_start_sector == 0)
         return F_NO_PARTITION;
     return F_OK;
@@ -94,8 +94,8 @@ static FFatResult parse_bpb_and_set_fat_type(FFat* f)
 
 FFatResult f_init(FFat* f)
 {
-    uint8_t partition = f->F_PARM;
-    TRY(set_partition_start(f, partition))
+    uint8_t partition_number = f->F_PARM;
+    TRY(set_partition_start(f, partition_number))
     
     TRY(load_boot_sector(f))
     TRY(check_bootsector_valid(f))

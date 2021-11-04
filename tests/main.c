@@ -44,7 +44,7 @@ int main()
         j = 0;
         do {
             if (has_scenario(&test_list[j], scenario_list[i])) {
-                if (test_list[j].run_test(&f))
+                if (test_list[j].run_test(&f, scenario_list[i]))
                     printf(GRN "\u2713" RST);
                 else
                     printf(RED "X" RST);

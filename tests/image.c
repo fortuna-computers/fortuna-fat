@@ -1,5 +1,6 @@
 #include "image.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -31,6 +32,13 @@ bool raw_read(uint64_t sector, uint8_t* buffer)
 uint64_t total_sectors()
 {
     return img_sz;
+}
+
+void export_image(const char* filename)
+{
+    FILE* f = fopen(filename, "w");
+    fwrite(img_data, img_sz, 1, f);
+    fclose(f);
 }
 
 //
