@@ -9,7 +9,7 @@
 
 #define IMG_SZ  (512 * 1024 * 1024)
 
-uint64_t img_sz = IMG_SZ / 512;
+uint64_t img_sz = 0;
 uint8_t  img_data[IMG_SZ];
 bool     emulate_io_error = false;
 

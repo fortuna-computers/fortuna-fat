@@ -17,7 +17,7 @@
 #define BPB_SEC_PER_CLUS   13
 
 
-typedef enum FFatType { FAT16, FAT32, FS_OTHER } FFatType;
+typedef enum FFatType { FAT16, FAT32 } FFatType;
 
 typedef struct __attribute__((__packed__)) FPartition {
     uint32_t abs_start_sector;
