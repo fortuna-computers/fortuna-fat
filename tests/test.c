@@ -56,7 +56,7 @@ static bool test_raw_sector_io_error(FFat* f, Scenario scenario)
 
 #if LAYER_IMPLEMENTED >= 1
 
-static bool test_bpb_parsing(FFat* f, Scenario scenario)
+static bool test_f_init(FFat* f, Scenario scenario)
 {
     f->F_PARM = 0;
     X_OK(ffat_op(f, F_INIT, date_time))
@@ -67,6 +67,16 @@ static bool test_bpb_parsing(FFat* f, Scenario scenario)
         ASSERT(f->F_SPC == 8)
     else
         ASSERT(f->F_SPC == 4)
+    return true;
+}
+
+static bool test_f_boot(FFat* f, Scenario scenario)
+{
+    X_OK(ffat_op(f, F_BOOT, date_time))
+    
+    ASSERT(f->buffer[510] == 0x55);
+    ASSERT(f->buffer[511] == 0xaa);
+    
     return true;
 }
 
@@ -82,7 +92,8 @@ static const Test test_list_[] = {
         { "Layer 0 sector past end of image", layer0_scenarios, test_raw_sector_past_end_of_image },
         { "Layer 0 I/O error", layer0_scenarios, test_raw_sector_io_error },
 #if LAYER_IMPLEMENTED >= 1
-        { "Check BPB parsing", layer1_scenarios, test_bpb_parsing },
+        { "F_INIT", layer1_scenarios, test_f_init },
+        { "F_BOOT", layer1_scenarios, test_f_boot },
 #endif
         { NULL, NULL, NULL },
 };

@@ -29,14 +29,14 @@ typedef struct __attribute__((__packed__)) FPartition {
 
 static FPartition partition;
 
-// region -> helper functions
+// region -> Helper functions
 
 static inline uint32_t frombuf16(uint8_t const* buffer, uint16_t pos) { return *(uint16_t *) &buffer[pos]; }
 static inline uint32_t frombuf32(uint8_t const* buffer, uint16_t pos) { return *(uint32_t *) &buffer[pos]; }
 
 // endregion
 
-// region -> Initialization
+// region -> Initialization & boot sector
 
 static FFatResult set_partition_start(FFat* f, uint8_t partition_number)
 {
@@ -102,6 +102,12 @@ FFatResult f_init(FFat* f)
     
     TRY(parse_bpb_and_set_fat_type(f))
     
+    return F_OK;
+}
+
+FFatResult f_boot(FFat* f)
+{
+    TRY(load_boot_sector(f))
     return F_OK;
 }
 
