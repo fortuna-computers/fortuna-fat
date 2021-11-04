@@ -8,9 +8,9 @@
 
 ### Layer 1
 
-- [ ] Add FSFAT for test support
-- [ ] Create stuff in header (operations, registers)
-- [ ] [ ] F_INIT (FAT16 and 32)
+- [X] Add FSFAT for test support
+- [X] Create stuff in header (operations, registers)
+- [X] F_INIT (FAT16 and 32)
 - [ ] F_BOOT
 - [ ] F_FREE
 - [ ] F_CREATE
