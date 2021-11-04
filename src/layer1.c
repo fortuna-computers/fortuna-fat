@@ -119,24 +119,52 @@ FFatResult f_boot(FFat* f)
 #define FSI_FREE_COUNT  0x1e8
 #define FSI_NEXT_FREE   0x1ec
 
-static FFatResult load_fsinfo(FFat* f)
+typedef struct FFsInfo {
+    uint32_t next_free;
+    uint32_t free_clusters;
+} FFsInfo;
+
+static FFatResult load_fsinfo(FFat* f, FFsInfo* fs_info)
 {
     f->F_RAWSEC = partition.abs_start_sector + FSINFO_SECTOR;
     TRY(f_raw_read(f))
+    fs_info->next_free = frombuf32(f->buffer, FSI_NEXT_FREE);
+    fs_info->free_clusters = frombuf32(f->buffer, FSI_FREE_COUNT);
     return F_OK;
 }
 
-static FFatResult write_fsinfo(FFat* f)
+static FFatResult write_fsinfo(FFat* f, FFsInfo* fs_info)
 {
+    tobuf32(f->buffer, FSI_FREE_COUNT, fs_info->free_clusters);
+    tobuf32(f->buffer, FSI_NEXT_FREE, fs_info->next_free);
     f->F_RAWSEC = partition.abs_start_sector + FSINFO_SECTOR;
     TRY(f_raw_write(f))
     return F_OK;
 }
 
+static FFatResult recalculate_fsinfo(FFat* f, FFsInfo* fs_info)
+{
+    return F_OK;
+}
+
 FFatResult f_free(FFat* f)
 {
-    TRY(load_fsinfo(f))
-    tobuf32(f->buffer, 0, frombuf32(f->buffer, FSI_FREE_COUNT));
+    FFsInfo fs_info;
+    if (partition.fat_type == FAT16)
+        TRY(recalculate_fsinfo(f, &fs_info))
+    else
+        TRY(load_fsinfo(f, &fs_info))
+    tobuf32(f->buffer, 0, fs_info.free_clusters);
+    return F_OK;
+}
+
+FFatResult f_fsi_calc(FFat* f)
+{
+    FFsInfo fs_info;
+    if (partition.fat_type == FAT32) {
+        TRY(recalculate_fsinfo(f, &fs_info))
+        TRY(write_fsinfo(f, &fs_info))
+    }
     return F_OK;
 }
 

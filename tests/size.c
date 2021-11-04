@@ -26,5 +26,16 @@ int main()
     
     ffat_op(&f, F_READ_RAW, date_time);
     ffat_op(&f, F_WRITE_RAW, date_time);
+    ffat_op(&f, F_INIT, date_time);
+    ffat_op(&f, F_BOOT, date_time);
+    ffat_op(&f, F_FREE, date_time);
+    ffat_op(&f, F_FSI_CALC, date_time);
+    ffat_op(&f, F_CREATE, date_time);
+    ffat_op(&f, F_SEEK_FW, date_time);
+    ffat_op(&f, F_SEEK_EOF, date_time);
+    ffat_op(&f, F_APPEND, date_time);
+    ffat_op(&f, F_TRUNCATE, date_time);
+    ffat_op(&f, F_READ, date_time);
+    ffat_op(&f, F_WRITE, date_time);
 }
 
