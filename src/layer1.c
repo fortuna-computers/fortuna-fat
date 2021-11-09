@@ -126,7 +126,15 @@ FFatResult fat_count(FFat* f, uint32_t sector_within_fat, uint32_t* free_count, 
     f->F_RAWSEC = partition.abs_start_sector + partition.fat_start_sector + sector_within_fat;
     TRY(f_raw_read(f))
     if (partition.fat_type == FAT16) {
-        // TODO
+        for (uint32_t entry_nr = 0; entry_nr < BYTES_PER_SECTOR; entry_nr += sizeof(uint16_t)) {
+            uint16_t entry = frombuf16(f->buffer, entry_nr);
+            if (entry == FAT_CLUSTER_FREE) {
+                ++(*free_count);
+                if (*last_free_sector == (uint32_t) -1)
+                    *last_free_sector = (sector_within_fat * BYTES_PER_SECTOR / sizeof(uint16_t)) + entry_nr;
+            }
+        }
+        
     } else if (partition.fat_type == FAT32) {
         for (uint32_t entry_nr = 0; entry_nr < BYTES_PER_SECTOR; entry_nr += sizeof(uint32_t)) {
             uint32_t entry = frombuf32(f->buffer, entry_nr) & FAT32_MASK;

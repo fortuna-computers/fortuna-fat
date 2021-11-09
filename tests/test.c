@@ -86,18 +86,20 @@ static bool test_f_boot(FFat* f, Scenario scenario)
 
 static bool test_f_free(FFat* f, Scenario scenario)
 {
-    DWORD fsfat_free;
-    
     X_OK(ffat_op(f, F_FREE, date_time))
-    uint32_t free_ = *(uint32_t *) f->buffer;
+    uint32_t free1 = *(uint32_t *) f->buffer;
     
+    DWORD free2;
     FATFS* fatfs = calloc(1, sizeof(FATFS));
     R(f_mount(fatfs, "", 0));
-    R(f_getfree("", &fsfat_free, &fatfs))
+    R(f_getfree("", &free2, &fatfs))
     R(f_mount(NULL, "", 0));
     free(fatfs);
     
-    return fsfat_free == free_;
+    if (scenario == scenario_fat16)
+        return free1 > (free2 * 0.8) && free1 < (free1 * 1.2);
+    else
+        return free1 == free2;
 }
 
 static bool test_f_fsi_calc(FFat* f, Scenario scenario)
