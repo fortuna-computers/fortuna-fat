@@ -42,20 +42,20 @@ typedef enum FFatResult {
 } FFatResult;
 
 typedef struct __attribute__((__packed__)) FFat {
-    uint8_t*     buffer;
+    uint8_t*     buffer;       // buffer to exchange data between computer and device
     union {
-        uint64_t F_RAWSEC;
+        uint64_t F_RAWSEC;     // sector parameter (when using layer 0)
 #if LAYER_IMPLEMENTED >= 1
         struct {
-            uint32_t F_CLSTR;
-            uint16_t F_SCTR;
+            uint32_t F_CLSTR;  // cluster parameter
+            uint16_t F_SCTR;   // sector parameter (sector count starting on cluster)
         };
-        uint8_t  F_PARM;
-        uint16_t F_ROOT;
-        uint8_t  F_SPC;
+        uint8_t  F_PARM;       // additional parameter
+        uint16_t F_ROOT;       // root directory sector
+        uint8_t  F_SPC;        // sectors per cluster
 #endif
     };
-    FFatResult   F_RSLT : 8;
+    FFatResult   F_RSLT : 8;   // result of the last operation
 } FFat;
 
 typedef struct __attribute__((__packed__)) FDateTime {} FDateTime;

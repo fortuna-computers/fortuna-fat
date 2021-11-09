@@ -4,11 +4,14 @@
 
 #define TRY(expr) { FFatResult r = (expr); if (r != F_OK) return r; }
 
+#define BYTES_PER_SECTOR 512
+
 typedef enum FFatType { FAT16, FAT32 } FFatType;
 
 typedef struct __attribute__((__packed__)) FPartition {
     uint32_t abs_start_sector;
-    uint32_t fat_size;
+    uint16_t fat_start_sector;
+    uint32_t fat_sz_sectors;
     uint32_t data_sector;
     uint8_t  num_fats : 3;
     FFatType fat_type : 2;
@@ -59,7 +62,7 @@ static FFatResult check_bootsector_valid(FFat* f)
         return F_UNSUPPORTED_FS;
     if (f->buffer[510] != 0x55 || f->buffer[511] != 0xaa)
         return F_UNSUPPORTED_FS;
-    if (frombuf16(f->buffer, BPB_BYTES_PER_SEC) != 512)
+    if (frombuf16(f->buffer, BPB_BYTES_PER_SEC) != BYTES_PER_SECTOR)
         return F_BPS_NOT_512;
     return F_OK;
 }
@@ -71,15 +74,15 @@ static FFatResult parse_bpb_and_set_fat_type(FFat* f)
     uint32_t fat_sz_32 = frombuf32(f->buffer, BPB_FAT_SZ_32);
     uint16_t tot_sec_16 = frombuf16(f->buffer, BPB_TOT_SEC_16);
     uint32_t tot_sec_32 = frombuf32(f->buffer, BPB_TOT_SEC_32);
-    uint16_t resvd_sec_cnt = frombuf16(f->buffer, BPB_RESVD_SEC_CNT);
+    partition.fat_start_sector = frombuf16(f->buffer, BPB_RESVD_SEC_CNT);
     partition.num_fats = f->buffer[BPB_NUM_FATS];
     f->F_SPC = f->buffer[BPB_SEC_PER_CLUS];
     
-    uint32_t root_dir_sectors = ((root_ent_cnt * 32) + 511) / 512;
+    uint32_t root_dir_sectors = ((root_ent_cnt * 32) + (BYTES_PER_SECTOR - 1)) / BYTES_PER_SECTOR;
     uint32_t tot_sec = tot_sec_16 ? tot_sec_16 : tot_sec_32;
-    partition.fat_size = fat_sz_16 ? fat_sz_16 : fat_sz_32;
+    partition.fat_sz_sectors = fat_sz_16 ? fat_sz_16 : fat_sz_32;
     
-    partition.data_sector = tot_sec - (resvd_sec_cnt + (partition.num_fats * partition.fat_size) + root_dir_sectors);
+    partition.data_sector = tot_sec - (partition.fat_start_sector + (partition.num_fats * partition.fat_sz_sectors) + root_dir_sectors);
     uint32_t count_of_clusters = partition.data_sector / f->F_SPC;
     
     if (count_of_clusters < 4085)
@@ -113,7 +116,33 @@ FFatResult f_boot(FFat* f)
 
 // endregion
 
-// region -> FSINFO
+// region -> FAT management
+
+#define FAT32_MASK       0x0fffffff
+#define FAT_CLUSTER_FREE 0x0
+
+FFatResult fat_count(FFat* f, uint32_t sector_within_fat, uint32_t* free_count, uint32_t* last_free_sector)
+{
+    f->F_RAWSEC = partition.abs_start_sector + partition.fat_start_sector + sector_within_fat;
+    TRY(f_raw_read(f))
+    if (partition.fat_type == FAT16) {
+        // TODO
+    } else if (partition.fat_type == FAT32) {
+        for (uint32_t entry_nr = 0; entry_nr < BYTES_PER_SECTOR; entry_nr += sizeof(uint32_t)) {
+            uint32_t entry = frombuf32(f->buffer, entry_nr) & FAT32_MASK;
+            if (entry == FAT_CLUSTER_FREE) {
+                ++(*free_count);
+                if (*last_free_sector == (uint32_t) -1)
+                    *last_free_sector = (sector_within_fat * BYTES_PER_SECTOR / sizeof(uint32_t)) + entry_nr;
+            }
+        }
+    }
+    return F_OK;
+}
+
+// endregion
+
+// region -> FSINFO read/update
 
 #define FSINFO_SECTOR       1
 #define FSI_FREE_COUNT  0x1e8
@@ -144,6 +173,14 @@ static FFatResult write_fsinfo(FFat* f, FFsInfo* fs_info)
 
 static FFatResult recalculate_fsinfo(FFat* f, FFsInfo* fs_info)
 {
+    fs_info->free_clusters = 0;
+    fs_info->next_free = (uint32_t) -1;
+    for (uint32_t i = 0; i < partition.fat_sz_sectors; ++i) {
+        uint32_t last = fs_info->next_free;
+        TRY(fat_count(f, i, &fs_info->free_clusters, &last))
+        if (fs_info->next_free == (uint32_t) -1)
+            fs_info->next_free = last;
+    }
     return F_OK;
 }
 

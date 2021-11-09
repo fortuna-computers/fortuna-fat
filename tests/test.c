@@ -100,6 +100,18 @@ static bool test_f_free(FFat* f, Scenario scenario)
     return fsfat_free == free_;
 }
 
+static bool test_f_fsi_calc(FFat* f, Scenario scenario)
+{
+    X_OK(ffat_op(f, F_FREE, date_time))
+    uint32_t free1 = *(uint32_t *) f->buffer;
+    
+    X_OK(ffat_op(f, F_FSI_CALC, date_time))
+    X_OK(ffat_op(f, F_FREE, date_time))
+    uint32_t free2 = *(uint32_t *) f->buffer;
+    
+    return free1 > (free2 * 0.8) && free1 < (free1 * 1.2);
+}
+
 #endif  // LAYER_IMPLEMENT >= 1
 
 static const Scenario layer0_scenarios[] = { scenario_raw_sectors, NULL };
@@ -115,6 +127,7 @@ static const Test test_list_[] = {
         { "F_INIT", layer1_scenarios, test_f_init },
         { "F_BOOT", layer1_scenarios, test_f_boot },
         { "F_FREE", layer1_scenarios, test_f_free },
+        { "F_FSI_CALC", layer1_scenarios, test_f_fsi_calc },
 #endif
         { NULL, NULL, NULL },
 };
