@@ -114,6 +114,11 @@ static bool test_f_fsi_calc(FFat* f, Scenario scenario)
     return free1 > (free2 * 0.8) && free1 < (free1 * 1.2);
 }
 
+static bool test_f_create(FFat* f, Scenario scenario)
+{
+    X_OK(ffat_op(f, F_CREATE, date_time))
+}
+
 #endif  // LAYER_IMPLEMENT >= 1
 
 static const Scenario layer0_scenarios[] = { scenario_raw_sectors, NULL };

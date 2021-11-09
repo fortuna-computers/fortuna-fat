@@ -41,6 +41,8 @@ typedef enum FFatResult {
     F_NOT_IMPLEMENTED       = 0xff,
 } FFatResult;
 
+typedef enum FFatType { FAT16, FAT32 } FFatType;
+
 typedef struct __attribute__((__packed__)) FFat {
     uint8_t*     buffer;       // buffer to exchange data between computer and device
     union {
@@ -50,11 +52,19 @@ typedef struct __attribute__((__packed__)) FFat {
             uint32_t F_CLSTR;  // cluster parameter
             uint16_t F_SCTR;   // sector parameter (sector count starting on cluster)
         };
-        uint8_t  F_PARM;       // additional parameter
-        uint16_t F_ROOT;       // root directory sector
-        uint8_t  F_SPC;        // sectors per cluster
 #endif
     };
+#if LAYER_IMPLEMENTED >= 1
+    uint8_t  F_PARM;          // additional parameter
+    uint16_t F_ROOT;          // root directory sector
+    uint8_t  F_SPC;           // sectors per cluster
+    uint32_t F_ABS;           // partition sector start (from beginning of disk)
+    uint16_t F_FATST;         // FAT starting sector
+    uint32_t F_FATSZ;         // FAT size
+    uint32_t F_DATA;          // Data starting sector
+    uint8_t  F_NFATS : 3;     // Number of fats
+    FFatType F_TYPE : 2;      // Filesystem type (FAT16/32)
+#endif
     FFatResult   F_RSLT : 8;   // result of the last operation
 } FFat;
 
