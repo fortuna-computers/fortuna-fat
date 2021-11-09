@@ -113,7 +113,10 @@ FFatResult f_boot(FFat* f)
 
 static FFatResult fat_find_entry(FFat* f, uint8_t fat_number, uint32_t cluster_number, uint32_t* sector, uint16_t* entry_ptr)
 {
-    // TODO
+    uint32_t offset = cluster_number * ((f->F_TYPE == FAT16) ? 2 : 4);
+    *sector = f->F_FATST + (fat_number * f->F_FATSZ) + (offset / BYTES_PER_SECTOR);
+    *entry_ptr = offset % BYTES_PER_SECTOR;
+    
     return F_OK;
 }
 
