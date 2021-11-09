@@ -108,6 +108,39 @@ FFatResult f_boot(FFat* f)
 #define FAT32_MASK       0x0fffffff
 #define FAT_CLUSTER_FREE 0x0
 
+#define FAT16_EOC 0xffff
+#define FAT32_EOC 0x0fffffff
+
+static FFatResult fat_find_entry(FFat* f, uint8_t fat_number, uint32_t cluster_number, uint32_t* sector, uint16_t* entry_ptr)
+{
+    // TODO
+    return F_OK;
+}
+
+static FFatResult fat_update_cluster(FFat* f, uint32_t cluster_number, uint32_t data)
+{
+    for (uint8_t fatn = 0; fatn < f->F_NFATS; ++fatn) {
+        // find entry_ptr
+        uint32_t sector;
+        uint16_t entry_ptr;
+        TRY(fat_find_entry(f, fatn, cluster_number, &sector, &entry_ptr))
+        
+        // load and update sector
+        f->F_RAWSEC = f->F_ABS + sector;
+        TRY(f_raw_read(f))
+        tobuf32(f->buffer, entry_ptr, data);
+        TRY(f_raw_write(f))
+    }
+    
+    return F_OK;
+}
+
+static FFatResult fat_find_next_free_cluster(FFat* f, uint32_t start_at_cluster, uint32_t* cluster_found)
+{
+    // TODO
+    return F_OK;
+}
+
 FFatResult fat_count(FFat* f, uint32_t sector_within_fat, uint32_t* free_count, uint32_t* last_free_sector)
 {
     f->F_RAWSEC = f->F_ABS + f->F_FATST + sector_within_fat;
@@ -197,6 +230,27 @@ FFatResult f_fsi_calc(FFat* f)
         TRY(recalculate_fsinfo(f, &fs_info))
         TRY(write_fsinfo(f, &fs_info))
     }
+    return F_OK;
+}
+
+// endregion
+
+// region -> File management
+
+FFatResult f_create(FFat* f)
+{
+    // find current space used and next free cluster
+    FFsInfo fs_info;
+    TRY(load_fsinfo(f, &fs_info))
+    
+    // create cluster in all FATs
+    TRY(fat_update_cluster(f, fs_info.next_free, f->F_TYPE == FAT16 ? FAT16_EOC : FAT32_EOC))
+    
+    // update FSINFO
+    TRY(fat_find_next_free_cluster(f, fs_info.next_free, &fs_info.next_free))
+    --fs_info.free_clusters;
+    TRY(write_fsinfo(f, &fs_info))
+    
     return F_OK;
 }
 

@@ -146,9 +146,9 @@ static bool test_f_create(FFat* f, Scenario scenario)
     // check if FAT entry was created
     X_OK(ffat_op(f, F_READ_RAW, date_time))
     if (scenario == scenario_fat16)
-        ASSERT(*(uint16_t *) &f->buffer[expected_cluster] == 0xfff8)
+        ASSERT(*(uint16_t *) &f->buffer[expected_cluster] >= 0xfff8)
     else
-        ASSERT((*(uint32_t *) &f->buffer[expected_cluster] & 0x0fffffff) == 0x0ffffff8)
+        ASSERT((*(uint32_t *) &f->buffer[expected_cluster] & 0x0fffffff) >= 0x0ffffff8)
     
     // check new free space
     X_OK(ffat_op(f, F_FREE, date_time))

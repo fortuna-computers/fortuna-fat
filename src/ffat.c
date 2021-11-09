@@ -17,6 +17,7 @@ FFatResult ffat_op(FFat* f, FFat32Op op, FDateTime date_time)
         case F_BOOT:      return f->F_RSLT = f_boot(f);
         case F_FREE:      return f->F_RSLT = f_free(f);
         case F_FSI_CALC:  return f->F_RSLT = f_fsi_calc(f);
+        case F_CREATE:    return f->F_RSLT = f_create(f);
 #endif
         default:          return f->F_RSLT = F_INVALID_OP;
     }

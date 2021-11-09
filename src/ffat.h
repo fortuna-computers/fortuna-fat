@@ -65,7 +65,7 @@ typedef struct __attribute__((__packed__)) FFat {
     uint8_t  F_NFATS : 3;     // Number of fats
     FFatType F_TYPE : 2;      // Filesystem type (FAT16/32)
 #endif
-    FFatResult   F_RSLT : 8;   // result of the last operation
+    FFatResult F_RSLT : 8;   // result of the last operation
 } FFat;
 
 typedef struct __attribute__((__packed__)) FDateTime {} FDateTime;
