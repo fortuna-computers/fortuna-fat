@@ -116,7 +116,44 @@ static bool test_f_fsi_calc(FFat* f, Scenario scenario)
 
 static bool test_f_create(FFat* f, Scenario scenario)
 {
+    // check free space
+    X_OK(ffat_op(f, F_FREE, date_time))
+    uint32_t free1 = *(uint32_t *) f->buffer;
+    
+    // load FAT entry in buffer and find what would be the next cluster to be created
+    f->F_RAWSEC = f->F_ABS + f->F_FATST;
+    X_OK(ffat_op(f, F_READ_RAW, date_time))
+    
+    uint32_t expected_cluster = (uint32_t) -1;
+    
+    // find cluster to be created
+    if (scenario == scenario_fat16) {
+        for (size_t i = 0; i < f->F_FATSZ; i += sizeof(uint16_t)) {
+            if (*(uint16_t *) &f->buffer[i] == 0)
+                expected_cluster = i;
+        }
+    } else {
+        for (size_t i = 0; i < f->F_FATSZ; i += sizeof(uint32_t)) {
+            if (*(uint32_t *) &f->buffer[i] == 0)
+                expected_cluster = i;
+        }
+    }
+    ASSERT(expected_cluster != (uint32_t) -1)
+    
+    // create new FAT entry
     X_OK(ffat_op(f, F_CREATE, date_time))
+    
+    // check if FAT entry was created
+    X_OK(ffat_op(f, F_READ_RAW, date_time))
+    if (scenario == scenario_fat16)
+        ASSERT(*(uint16_t *) &f->buffer[expected_cluster] == 0xfff8)
+    else
+        ASSERT((*(uint32_t *) &f->buffer[expected_cluster] & 0x0fffffff) == 0x0ffffff8)
+    
+    // check new free space
+    X_OK(ffat_op(f, F_FREE, date_time))
+    uint32_t free2 = *(uint32_t *) f->buffer;
+    ASSERT(free2 == free1 - 1)
 }
 
 #endif  // LAYER_IMPLEMENT >= 1
@@ -135,6 +172,7 @@ static const Test test_list_[] = {
         { "F_BOOT", layer1_scenarios, test_f_boot },
         { "F_FREE", layer1_scenarios, test_f_free },
         { "F_FSI_CALC", layer1_scenarios, test_f_fsi_calc },
+        { "F_CREATE", layer1_scenarios, test_f_create },
 #endif
         { NULL, NULL, NULL },
 };

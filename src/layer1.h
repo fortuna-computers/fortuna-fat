@@ -9,4 +9,4 @@ FFatResult f_boot(FFat* f);
 FFatResult f_free(FFat* f);
 FFatResult f_fsi_calc(FFat* f);
 
-#endif //FORTUNA_FAT_LAYER1_H
+#endif
