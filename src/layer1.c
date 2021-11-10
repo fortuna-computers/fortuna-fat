@@ -325,18 +325,18 @@ FFatResult f_seek_fw(FFat* f)
         
         if (f->F_SCTR < f->F_SPC - 1) {   // go to next sector
             ++f->F_SCTR;
-            return F_OK;
             
         } else {   // go to next cluster
             TRY(fat_load_cluster(f, f->F_CLSTR, &next_cluster))   // TODO - don't load FAT from disk every time
             if (next_cluster >= ((f->F_TYPE == FAT16) ? FAT16_EOF : FAT32_EOF)) {
                 return F_SEEK_PAST_EOF;
+            } else {
+                f->F_CLSTR = next_cluster;
+                f->F_SCTR = 0;
             }
         }
+        
     }
-    
-    f->F_CLSTR = next_cluster;
-    f->F_SCTR = 0;
     
     return F_OK;
 }

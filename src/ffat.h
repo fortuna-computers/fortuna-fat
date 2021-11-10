@@ -42,17 +42,11 @@ typedef enum FFatResult {
 typedef enum FFatType { FAT16 = 0, FAT32 = 1 } FFatType;
 
 typedef struct __attribute__((__packed__)) FFat {
-    uint8_t*     buffer;       // buffer to exchange data between computer and device
-    union {
-        uint64_t F_RAWSEC;     // sector parameter (when using layer 0)
+    uint8_t* buffer;          // buffer to exchange data between computer and device
+    uint64_t F_RAWSEC;        // sector parameter (when using layer 0)
 #if LAYER_IMPLEMENTED >= 1
-        struct {
-            uint32_t F_CLSTR;  // cluster parameter
-            uint16_t F_SCTR;   // sector parameter (sector count starting on cluster)
-        };
-#endif
-    };
-#if LAYER_IMPLEMENTED >= 1
+    uint32_t F_CLSTR;         // cluster parameter
+    uint16_t F_SCTR;          // sector parameter (sector count starting on cluster)
     uint32_t F_PARM;          // additional parameter
     uint16_t F_ROOT;          // root directory sector
     uint8_t  F_SPC;           // sectors per cluster

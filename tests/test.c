@@ -284,9 +284,10 @@ static bool test_f_seek_fw_end(FFat* f, Scenario scenario)
     f->F_CLSTR = file_cluster;
     f->F_SCTR = 0;
     f->F_PARM = (uint32_t) -1;
-    X_OK(ffat_op(f, F_SEEK_FW, date_time))
+    FFatResult r = ffat_op(f, F_SEEK_FW, date_time);
     
-    ASSERT(f->F_CLSTR == last_cluster);
+    ASSERT(r == F_SEEK_PAST_EOF)
+    ASSERT(f->F_CLSTR == last_cluster)
     
     return true;
 }
@@ -318,7 +319,7 @@ static const Test test_list_[] = {
         { "F_FSI_CALC (next free cluster)", layer1_scenarios, test_f_fsi_calc_nxt_free },
         { "F_CREATE", layer1_scenarios, test_f_create },
         { "F_SEEK_FW (one sector)", layer1_scenarios, test_f_seek_fw_one },
-        // { "F_SEEK_FW (last sector)", layer1_scenarios, test_f_seek_fw_end },
+        { "F_SEEK_FW (last sector)", layer1_scenarios, test_f_seek_fw_end },
 #endif
         { NULL, NULL, NULL },
 };
