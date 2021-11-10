@@ -28,7 +28,6 @@ typedef enum FFat32Op {
 
 typedef enum FFatResult {
     F_OK                    = 0x00,
-    F_INVALID_OP            = 0x01,
     F_IO_ERROR              = 0x02,
 #if LAYER_IMPLEMENTED >= 1
     F_UNSUPPORTED_FS        = 0x10,
@@ -41,7 +40,7 @@ typedef enum FFatResult {
     F_NOT_IMPLEMENTED       = 0xff,
 } FFatResult;
 
-typedef enum FFatType { FAT16, FAT32 } FFatType;
+typedef enum FFatType { FAT16 = 0, FAT32 = 1 } FFatType;
 
 typedef struct __attribute__((__packed__)) FFat {
     uint8_t*     buffer;       // buffer to exchange data between computer and device

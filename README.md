@@ -58,13 +58,30 @@ not create a new file in the directory. This needs to be done in a superior laye
 
 ### Registers
 
+When refering to the registers, all clusters/sectors are counted from beginning of partition, except for `F_ABS`.
+
+These registers can be used to pass parameters and receive values from requests:
+
 | Name | Description | Size | RW |
 |------|-------------|------|----|
 | `F_CLSTR` | Number of the data cluster to which the operation refers to. | 32-bit | Read/write |
 | `F_SCTR`  | Number of the sector inside the cluster. | 16-bit | Read/write |
 | `F_PARM`  | Additional parameter used in some operations. | 8-bit | Read/write |
-| `F_ROOT`  | Number of the root directory sector (relative to start of data sectors). | 16-bit | Read-only
-| `F_SPC`   | Number of sectors per cluster | 8-bit | Read-only
+| `F_ROOT`  | Number of the root directory sector (relative to start of data sectors). | 16-bit | Read-only  |
+
+These registers are usually not required, but can provide additional information to the user:
+
+| Name | Description | Size | RW |
+|------|-------------|------|----|
+| `F_SPC`   | Number of sectors per cluster | 8-bit | Read-only |
+| `F_ABS`   | Partition sector start (counting from beginning of disk) | 32-bit | Read-only |
+| `F_FATST` | FAT sector start | 16-bit | Read-only |
+| `F_FATSZ` | FAT size | 32-bit | Read-only |
+| `F_DATA`  | Data starting sector | 32-bit | Read-only |
+| `F_NFATS` | Number of FATs | 3 bits (0 ~ 7) | Read-only |
+| `F_TYPE`  | Filesystem type | 2 bits (0: FAT16, 1: FAT32) | Read-only |
+
+
 
 ### Supported operations
 
@@ -94,6 +111,7 @@ not create a new file in the directory. This needs to be done in a superior laye
 | `F_DEVICE_FULL`     | There's no space left in the device. |
 | `F_SEEK_PAST_EOF`   | A seek command moved the pointer past EOF. |
 | `F_INVALID_FAT_CLUSTER` | A command was issued on a invalid FAT cluster. |
+| `F_NOT_IMPLEMENTED` | A request is being made to a command that was not implemented yet. |
 
 ---
 
