@@ -167,8 +167,6 @@ static bool test_f_fsi_calc(FFat* f, __attribute__((unused)) Scenario scenario)
 
 static bool test_f_fsi_calc_nxt_free(FFat* f, __attribute__((unused)) Scenario scenario)
 {
-    print_fat(f);
-    
     // check next free cluster before recalculation
     f->F_RAWSEC = f->F_ABS + 1;  // FSInfo sector
     X_OK(ffat_op(f, F_READ_RAW, date_time))
@@ -320,7 +318,7 @@ static const Test test_list_[] = {
         { "F_FSI_CALC (next free cluster)", layer1_scenarios, test_f_fsi_calc_nxt_free },
         { "F_CREATE", layer1_scenarios, test_f_create },
         { "F_SEEK_FW (one sector)", layer1_scenarios, test_f_seek_fw_one },
-        { "F_SEEK_FW (last sector)", layer1_scenarios, test_f_seek_fw_end },
+        // { "F_SEEK_FW (last sector)", layer1_scenarios, test_f_seek_fw_end },
 #endif
         { NULL, NULL, NULL },
 };
