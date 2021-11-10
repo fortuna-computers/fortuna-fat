@@ -113,6 +113,9 @@ FFatResult f_boot(FFat* f)
 #define FAT16_EOC 0xffff
 #define FAT32_EOC 0x0fffffff
 
+#define FAT16_EOF 0xfff8
+#define FAT32_EOF 0x0ffffff8
+
 static __attribute__((unused)) uint8_t fat_byte_sz(FFat* f)
 {
     return f->F_TYPE == FAT16 ? 2 : 4;
@@ -131,6 +134,9 @@ static FFatResult fat_find_entry(FFat* f, uint8_t fat_number, uint32_t cluster_n
 
 static FFatResult fat_update_cluster(FFat* f, uint32_t cluster_number, uint32_t data)
 {
+    if (cluster_number > f->F_FATSZ)
+        return F_INVALID_FAT_CLUSTER;
+    
     for (uint8_t fatn = 0; fatn < f->F_NFATS; ++fatn) {
         // find entry_ptr
         uint32_t sector;
@@ -143,6 +149,24 @@ static FFatResult fat_update_cluster(FFat* f, uint32_t cluster_number, uint32_t 
         tobuf32(f->buffer, entry_ptr, data);
         TRY(f_raw_write(f))
     }
+    
+    return F_OK;
+}
+
+static FFatResult fat_load_cluster(FFat* f, uint32_t cluster_number, uint32_t* data)
+{
+    if (cluster_number > f->F_FATSZ)
+        return F_INVALID_FAT_CLUSTER;
+    
+    // find entry
+    uint32_t sector;
+    uint16_t entry_ptr;
+    TRY(fat_find_entry(f, 0, cluster_number, &sector, &entry_ptr))
+    
+    // load sector
+    f->F_RAWSEC = f->F_ABS + f->F_FATST + sector;
+    TRY(f_raw_read(f))
+    *data = (f->F_TYPE == FAT16) ? frombuf16(f->buffer, entry_ptr) : frombuf32(f->buffer, entry_ptr);
     
     return F_OK;
 }
@@ -279,6 +303,33 @@ FFatResult f_create(FFat* f)
         TRY(fat_find_next_free_cluster(f, 0, &next_free))
         TRY(fat_update_cluster(f, next_free / 2, FAT16_EOC))
     }
+    
+    return F_OK;
+}
+
+FFatResult f_seek_fw(FFat* f)
+{
+    if (f->F_PARM == 0)
+        return F_OK;
+    
+    uint32_t next_cluster = f->F_CLSTR;
+    
+    for (uint32_t i = 0; i < f->F_PARM; ++i) {
+        
+        if (f->F_SCTR < f->F_SPC - 1) {   // go to next sector
+            ++f->F_SCTR;
+            return F_OK;
+            
+        } else {   // go to next cluster
+            TRY(fat_load_cluster(f, f->F_CLSTR, &next_cluster))   // TODO - don't load FAT from disk every time
+            if (next_cluster >= ((f->F_TYPE == FAT16) ? FAT16_EOF : FAT32_EOF)) {
+                return F_SEEK_PAST_EOF;
+            }
+        }
+    }
+    
+    f->F_CLSTR = next_cluster;
+    f->F_SCTR = 0;
     
     return F_OK;
 }

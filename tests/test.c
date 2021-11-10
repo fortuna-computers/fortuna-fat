@@ -11,9 +11,29 @@
 FDateTime date_time = {};
 FFatResult last_result;
 
+extern uint8_t _binary_tests_TAGS_TXT_start[];
+extern uint8_t _binary_tests_TAGS_TXT_end[];
+
 #define R(expr) { FRESULT r = (expr); if (r != FR_OK) { fprintf(stderr, "FSFAT error: %d\n", r); exit(EXIT_FAILURE); } }
 #define X_OK(expr) { last_result = (expr); if (last_result != F_OK) return false; }
 #define ASSERT(expr) { if (!(expr)) return false; }
+
+static uint32_t add_tags_txt()
+{
+    FIL fp;
+    UINT bw;
+    FATFS* fatfs = calloc(1, sizeof(FATFS));
+    
+    R(f_mount(fatfs, "", 0));
+    R(f_open(&fp, "tags.txt", FA_CREATE_NEW | FA_WRITE))
+    R(f_write(&fp, _binary_tests_TAGS_TXT_start, (_binary_tests_TAGS_TXT_end - _binary_tests_TAGS_TXT_start), &bw))
+    uint32_t file_cluster = fp.obj.sclust;
+    R(f_close(&fp))
+    R(f_mount(NULL, "", 0));
+    free(fatfs);
+    
+    return file_cluster;
+}
 
 static bool test_raw_sector(FFat* f, Scenario scenario)
 {
@@ -203,6 +223,31 @@ static bool test_f_create(FFat* f, Scenario scenario)
     return true;
 }
 
+static bool test_f_seek_fw_one(FFat* f, Scenario scenario)
+{
+    uint32_t file_cluster = add_tags_txt();
+    
+    // here we're guessing that the cluster for this file is 4
+    f->F_CLSTR = file_cluster;
+    f->F_SCTR = 0;
+    f->F_PARM = 1;
+    X_OK(ffat_op(f, F_SEEK_FW, date_time))
+    
+    if (scenario != scenario_fat32_spc1) {
+        ASSERT(f->F_CLSTR == file_cluster);
+        ASSERT(f->F_SCTR == 1);
+        while (f->F_CLSTR == file_cluster)
+            X_OK(ffat_op(f, F_SEEK_FW, date_time))
+        ASSERT(f->F_CLSTR == file_cluster + 1);  // here we're also guessing that FatFS used sector 4 after sector 3
+        ASSERT(f->F_SCTR == 0);
+    } else {
+        ASSERT(f->F_CLSTR == file_cluster + 1);
+        ASSERT(f->F_SCTR == 0);
+    }
+    
+    return true;
+}
+
 #endif  // LAYER_IMPLEMENT >= 1
 
 static const Scenario layer0_scenarios[] = { scenario_raw_sectors, NULL };
@@ -229,6 +274,7 @@ static const Test test_list_[] = {
         { "F_FSI_CALC (free space)", layer1_scenarios, test_f_fsi_calc },
         { "F_FSI_CALC (next free cluster)", layer1_scenarios, test_f_fsi_calc_nxt_free },
         { "F_CREATE", layer1_scenarios, test_f_create },
+        { "F_SEEK_FW (one sector)", layer1_scenarios, test_f_seek_fw_one },
 #endif
         { NULL, NULL, NULL },
 };

@@ -92,8 +92,7 @@ These registers are usually not required, but can provide additional information
 | `F_FREE`     | Returns number of free clusters into first 4 bytes of buffer. |
 | `F_FSI_CALC` | Recalculate FSINFO values (free clusters and next free cluster). |
 | `F_CREATE`   | Create a new file in FAT. |
-| `F_SEEK_FW`  | Move* forward a number of sectors | `F_PARM`: number of sectors to move forward. |
-| `F_SEEK_EOF` | Move* until the end of file. |
+| `F_SEEK_FW`  | Move* forward a number of sectors | `F_PARM`: number of sectors to move forward. Use `-1` to go to EOF. |
 | `F_APPEND`   | Move* until the end of file and append a new sector. |
 | `F_TRUNCATE` | Limit the file size to the one specified in `F_CLSTR` and `F_SCTR`, clearing all following FAT entries. |
 | `F_READ`     | Read a sector in a data cluster. |

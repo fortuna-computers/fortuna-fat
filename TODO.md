@@ -16,7 +16,6 @@
 - [X] F_FSI_CALC
 - [X] F_CREATE
 - [ ] F_SEEK_FW
-- [ ] F_SEEK_EOF
 - [ ] F_APPEND
 - [ ] F_TRUNCATE
 - [ ] F_READ

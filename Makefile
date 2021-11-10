@@ -1,6 +1,6 @@
 LAYER         = 1
 FFAT_OBJ      = src/ffat.o src/layer0.o src/layer1.o
-TEST_OBJ      = tests/main.o tests/image.o tests/scenario.o tests/test.o tests/ff/ff.o
+TEST_OBJ      = tests/main.o tests/image.o tests/scenario.o tests/test.o tests/ff/ff.o tests/tags.o
 CFLAGS        = -std=c11
 CPPFLAGS      = -Wall -Wextra
 MCU           = atmega16
@@ -34,6 +34,9 @@ check-data-size: size
 		>&2 echo "Data usage is too large.";  \
 		false; \
 	fi
+
+tests/tags.o: tests/TAGS.TXT
+	objcopy --input binary --output pe-x86-64 --binary-architecture i386:x86-64 $^ $@
 
 clean:
 	rm -f ${FFAT_OBJ} ${TEST_OBJ} ftest size.elf tests/size.o
