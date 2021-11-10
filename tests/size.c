@@ -1,14 +1,19 @@
 #include "../src/ffat.h"
 
 static uint8_t buffer[512] = {0};
+static FFat f = {};
 
 bool raw_write(uint64_t sector, uint8_t const* buffer)
 {
+    (void) sector;
+    (void) buffer;
     return true;
 }
 
 bool raw_read(uint64_t sector, uint8_t* buffer)
 {
+    (void) sector;
+    (void) buffer;
     return true;
 }
 
@@ -21,7 +26,6 @@ int main()
 {
     FDateTime date_time = {};
     
-    FFat f;
     f.buffer = buffer;
     
     ffat_op(&f, F_READ_RAW, date_time);

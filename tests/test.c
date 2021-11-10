@@ -74,7 +74,7 @@ static bool test_f_init(FFat* f, Scenario scenario)
     return true;
 }
 
-static bool test_f_boot(FFat* f, Scenario scenario)
+static bool test_f_boot(FFat* f, __attribute__((unused)) Scenario scenario)
 {
     X_OK(ffat_op(f, F_BOOT, date_time))
     
@@ -104,7 +104,7 @@ static bool test_f_free(FFat* f, Scenario scenario)
     return true;
 }
 
-static bool test_f_fsi_calc(FFat* f, Scenario scenario)
+static bool test_f_fsi_calc(FFat* f, __attribute__((unused)) Scenario scenario)
 {
     X_OK(ffat_op(f, F_FREE, date_time))
     uint32_t free1 = *(uint32_t *) f->buffer;
@@ -118,7 +118,7 @@ static bool test_f_fsi_calc(FFat* f, Scenario scenario)
     return true;
 }
 
-static bool test_f_fsi_calc_nxt_free(FFat* f, Scenario scenario)
+static bool test_f_fsi_calc_nxt_free(FFat* f, __attribute__((unused)) Scenario scenario)
 {
     // check next free cluster before recalculation
     f->F_RAWSEC = f->F_ABS + 1;  // FSInfo sector
@@ -140,7 +140,15 @@ static bool test_f_fsi_calc_nxt_free(FFat* f, Scenario scenario)
 
 static bool test_f_create(FFat* f, Scenario scenario)
 {
-    // check free space
+    // check next free cluster before creation
+    uint32_t nxt_free_1;
+    if (scenario != scenario_fat16) {
+        f->F_RAWSEC = f->F_ABS + 1;  // FSInfo sector
+        X_OK(ffat_op(f, F_READ_RAW, date_time))
+        nxt_free_1 = *(uint32_t *) &f->buffer[492];
+    }
+    
+    // check free space before creation
     X_OK(ffat_op(f, F_FREE, date_time))
     uint32_t free1 = *(uint32_t *) f->buffer;
     
@@ -183,6 +191,15 @@ static bool test_f_create(FFat* f, Scenario scenario)
     uint32_t free2 = *(uint32_t *) f->buffer;
     ASSERT(free2 == free1 - 1)
     
+    // check new next free cluster
+    if (scenario != scenario_fat16) {
+        f->F_RAWSEC = f->F_ABS + 1;  // FSInfo sector
+        X_OK(ffat_op(f, F_READ_RAW, date_time))
+        uint32_t nxt_free_2 = *(uint32_t *) &f->buffer[492];
+    
+        ASSERT(nxt_free_2 > nxt_free_1)
+    }
+    
     return true;
 }
 
@@ -190,7 +207,15 @@ static bool test_f_create(FFat* f, Scenario scenario)
 
 static const Scenario layer0_scenarios[] = { scenario_raw_sectors, NULL };
 #if LAYER_IMPLEMENTED >= 1
-static const Scenario layer1_scenarios[] = { scenario_fat32, scenario_fat32_align512, scenario_fat32_spc1, scenario_fat32_spc8, scenario_fat32_2_partitions, scenario_fat16, NULL };
+static const Scenario layer1_scenarios[] = {
+        scenario_fat32,
+        scenario_fat32_align512,
+        scenario_fat32_spc1,
+        scenario_fat32_spc8,
+        scenario_fat32_2_partitions,
+        scenario_fat16,
+        NULL
+};
 #endif
 
 static const Test test_list_[] = {

@@ -1,5 +1,7 @@
 #include "layer1.h"
 
+#include <stddef.h>
+
 #include "layer0.h"
 
 #define TRY(expr) { FFatResult r = (expr); if (r != F_OK) return r; }
@@ -111,7 +113,7 @@ FFatResult f_boot(FFat* f)
 #define FAT16_EOC 0xffff
 #define FAT32_EOC 0x0fffffff
 
-static uint8_t fat_byte_sz(FFat* f)
+static __attribute__((unused)) uint8_t fat_byte_sz(FFat* f)
 {
     return f->F_TYPE == FAT16 ? 2 : 4;
 }
@@ -119,8 +121,10 @@ static uint8_t fat_byte_sz(FFat* f)
 static FFatResult fat_find_entry(FFat* f, uint8_t fat_number, uint32_t cluster_number, uint32_t* sector, uint16_t* entry_ptr)
 {
     uint32_t offset = cluster_number * ((f->F_TYPE == FAT16) ? 2 : 4);
-    *sector = f->F_FATST + (fat_number * f->F_FATSZ) + (offset / BYTES_PER_SECTOR);
-    *entry_ptr = offset % BYTES_PER_SECTOR;
+    if (sector)
+        *sector = (fat_number * f->F_FATSZ) + (offset / BYTES_PER_SECTOR);
+    if (entry_ptr)
+        *entry_ptr = offset % BYTES_PER_SECTOR;
     
     return F_OK;
 }
@@ -134,18 +138,12 @@ static FFatResult fat_update_cluster(FFat* f, uint32_t cluster_number, uint32_t 
         TRY(fat_find_entry(f, fatn, cluster_number, &sector, &entry_ptr))
         
         // load and update sector
-        f->F_RAWSEC = f->F_ABS + sector;
+        f->F_RAWSEC = f->F_ABS + f->F_FATST + sector;
         TRY(f_raw_read(f))
         tobuf32(f->buffer, entry_ptr, data);
         TRY(f_raw_write(f))
     }
     
-    return F_OK;
-}
-
-static FFatResult fat_find_next_free_cluster(FFat* f, uint32_t start_at_cluster, uint32_t* cluster_found)
-{
-    // TODO
     return F_OK;
 }
 
@@ -157,8 +155,9 @@ FFatResult fat_count(FFat* f, uint32_t sector_within_fat, uint32_t* free_count, 
         for (uint32_t entry_nr = 0; entry_nr < BYTES_PER_SECTOR; entry_nr += sizeof(uint16_t)) {
             uint16_t entry = frombuf16(f->buffer, entry_nr);
             if (entry == FAT_CLUSTER_FREE) {
-                ++(*free_count);
-                if (*last_free_sector == (uint32_t) -1)
+                if (free_count)
+                    ++(*free_count);
+                if (last_free_sector && *last_free_sector == (uint32_t) -1)
                     *last_free_sector = (sector_within_fat * BYTES_PER_SECTOR / sizeof(uint16_t)) + entry_nr;
             }
         }
@@ -167,13 +166,28 @@ FFatResult fat_count(FFat* f, uint32_t sector_within_fat, uint32_t* free_count, 
         for (uint32_t entry_nr = 0; entry_nr < BYTES_PER_SECTOR; entry_nr += sizeof(uint32_t)) {
             uint32_t entry = frombuf32(f->buffer, entry_nr) & FAT32_MASK;
             if (entry == FAT_CLUSTER_FREE) {
-                ++(*free_count);
-                if (*last_free_sector == (uint32_t) -1)
+                if (free_count)
+                    ++(*free_count);
+                if (last_free_sector && *last_free_sector == (uint32_t) -1)
                     *last_free_sector = (sector_within_fat * BYTES_PER_SECTOR / sizeof(uint32_t)) + entry_nr;
             }
         }
     }
     return F_OK;
+}
+
+static FFatResult fat_find_next_free_cluster(FFat* f, uint32_t start_at_cluster, uint32_t* cluster_found)
+{
+    uint32_t starting_sector;
+    TRY(fat_find_entry(f, 0, start_at_cluster, &starting_sector, NULL))
+    
+    *cluster_found = -1;
+    for (uint32_t i = starting_sector; i < f->F_FATSZ; ++i) {
+        TRY(fat_count(f, i, NULL, cluster_found))
+        if (*cluster_found != (uint32_t) -1)
+            return F_OK;
+    }
+    return F_DEVICE_FULL;
 }
 
 // endregion
@@ -248,16 +262,23 @@ FFatResult f_fsi_calc(FFat* f)
 FFatResult f_create(FFat* f)
 {
     // find current space used and next free cluster
-    FFsInfo fs_info;
-    TRY(load_fsinfo(f, &fs_info))
+    if (f->F_TYPE == FAT32) {
+        FFsInfo fs_info;
+        TRY(load_fsinfo(f, &fs_info))
     
-    // create cluster in all FATs
-    TRY(fat_update_cluster(f, fs_info.next_free / fat_byte_sz(f), f->F_TYPE == FAT16 ? FAT16_EOC : FAT32_EOC))
-    
-    // update FSINFO
-    TRY(fat_find_next_free_cluster(f, fs_info.next_free, &fs_info.next_free))
-    --fs_info.free_clusters;
-    TRY(write_fsinfo(f, &fs_info))
+        // create cluster in all FATs
+        TRY(fat_update_cluster(f, fs_info.next_free / 4, FAT32_EOC))
+        
+        // update FSINFO
+        TRY(fat_find_next_free_cluster(f, fs_info.next_free, &fs_info.next_free))
+        --fs_info.free_clusters;
+        TRY(write_fsinfo(f, &fs_info))
+        
+    } else {
+        uint32_t next_free;
+        TRY(fat_find_next_free_cluster(f, 0, &next_free))
+        TRY(fat_update_cluster(f, next_free / 2, FAT16_EOC))
+    }
     
     return F_OK;
 }

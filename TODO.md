@@ -14,7 +14,7 @@
 - [X] F_BOOT
 - [X] F_FREE
 - [X] F_FSI_CALC
-- [ ] F_CREATE
+- [X] F_CREATE
 - [ ] F_SEEK_FW
 - [ ] F_SEEK_EOF
 - [ ] F_APPEND
