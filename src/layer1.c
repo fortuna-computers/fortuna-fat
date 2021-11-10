@@ -111,6 +111,11 @@ FFatResult f_boot(FFat* f)
 #define FAT16_EOC 0xffff
 #define FAT32_EOC 0x0fffffff
 
+static uint8_t fat_byte_sz(FFat* f)
+{
+    return f->F_TYPE == FAT16 ? 2 : 4;
+}
+
 static FFatResult fat_find_entry(FFat* f, uint8_t fat_number, uint32_t cluster_number, uint32_t* sector, uint16_t* entry_ptr)
 {
     uint32_t offset = cluster_number * ((f->F_TYPE == FAT16) ? 2 : 4);
@@ -247,7 +252,7 @@ FFatResult f_create(FFat* f)
     TRY(load_fsinfo(f, &fs_info))
     
     // create cluster in all FATs
-    TRY(fat_update_cluster(f, fs_info.next_free, f->F_TYPE == FAT16 ? FAT16_EOC : FAT32_EOC))
+    TRY(fat_update_cluster(f, fs_info.next_free / fat_byte_sz(f), f->F_TYPE == FAT16 ? FAT16_EOC : FAT32_EOC))
     
     // update FSINFO
     TRY(fat_find_next_free_cluster(f, fs_info.next_free, &fs_info.next_free))

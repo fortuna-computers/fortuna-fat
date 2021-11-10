@@ -22,12 +22,12 @@ static void R(FRESULT fresult)
 
 void (*scenario_list[MAX_SCENARIOS])() = {
         scenario_raw_sectors,
-        scenario_fat16,
         scenario_fat32,
         scenario_fat32_align512,
         scenario_fat32_spc1,
         scenario_fat32_spc8,
         scenario_fat32_2_partitions,
+        scenario_fat16,
         NULL
 };
 

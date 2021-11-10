@@ -97,9 +97,11 @@ static bool test_f_free(FFat* f, Scenario scenario)
     free(fatfs);
     
     if (scenario == scenario_fat16)
-        return free1 > (free2 * 0.8) && free1 < (free1 * 1.2);
+        ASSERT(free1 > (free2 * 0.8) && free1 < (free1 * 1.2))
     else
-        return free1 == free2;
+        ASSERT(free1 == free2)
+        
+    return true;
 }
 
 static bool test_f_fsi_calc(FFat* f, Scenario scenario)
@@ -111,7 +113,29 @@ static bool test_f_fsi_calc(FFat* f, Scenario scenario)
     X_OK(ffat_op(f, F_FREE, date_time))
     uint32_t free2 = *(uint32_t *) f->buffer;
     
-    return free1 > (free2 * 0.8) && free1 < (free1 * 1.2);
+    ASSERT(free1 > (free2 * 0.8) && free1 < (free1 * 1.2))
+    
+    return true;
+}
+
+static bool test_f_fsi_calc_nxt_free(FFat* f, Scenario scenario)
+{
+    // check next free cluster before recalculation
+    f->F_RAWSEC = f->F_ABS + 1;  // FSInfo sector
+    X_OK(ffat_op(f, F_READ_RAW, date_time))
+    uint32_t nxt_free_1 = *(uint32_t *) &f->buffer[492];
+    
+    // recalculate
+    X_OK(ffat_op(f, F_FSI_CALC, date_time))
+    
+    // check next free cluster after recalculation
+    f->F_RAWSEC = f->F_ABS + 1;  // FSInfo sector
+    X_OK(ffat_op(f, F_READ_RAW, date_time))
+    uint32_t nxt_free_2 = *(uint32_t *) &f->buffer[492];
+    
+    ASSERT(nxt_free_1 == nxt_free_2)
+    
+    return true;
 }
 
 static bool test_f_create(FFat* f, Scenario scenario)
@@ -120,7 +144,7 @@ static bool test_f_create(FFat* f, Scenario scenario)
     X_OK(ffat_op(f, F_FREE, date_time))
     uint32_t free1 = *(uint32_t *) f->buffer;
     
-    // load FAT entry in buffer and find what would be the next cluster to be created
+    // load first FAT entry in buffer and find what would be the next cluster to be created
     f->F_RAWSEC = f->F_ABS + f->F_FATST;
     X_OK(ffat_op(f, F_READ_RAW, date_time))
     
@@ -129,13 +153,17 @@ static bool test_f_create(FFat* f, Scenario scenario)
     // find cluster to be created
     if (scenario == scenario_fat16) {
         for (size_t i = 0; i < f->F_FATSZ; i += sizeof(uint16_t)) {
-            if (*(uint16_t *) &f->buffer[i] == 0)
-                expected_cluster = i;
+            if (*(uint16_t *) &f->buffer[i] == 0) {
+                expected_cluster = i / 2;
+                break;
+            }
         }
     } else {
         for (size_t i = 0; i < f->F_FATSZ; i += sizeof(uint32_t)) {
-            if (*(uint32_t *) &f->buffer[i] == 0)
-                expected_cluster = i;
+            if (*(uint32_t *) &f->buffer[i] == 0) {
+                expected_cluster = i / 4;
+                break;
+            }
         }
     }
     ASSERT(expected_cluster != (uint32_t) -1)
@@ -154,6 +182,8 @@ static bool test_f_create(FFat* f, Scenario scenario)
     X_OK(ffat_op(f, F_FREE, date_time))
     uint32_t free2 = *(uint32_t *) f->buffer;
     ASSERT(free2 == free1 - 1)
+    
+    return true;
 }
 
 #endif  // LAYER_IMPLEMENT >= 1
@@ -171,7 +201,8 @@ static const Test test_list_[] = {
         { "F_INIT", layer1_scenarios, test_f_init },
         { "F_BOOT", layer1_scenarios, test_f_boot },
         { "F_FREE", layer1_scenarios, test_f_free },
-        { "F_FSI_CALC", layer1_scenarios, test_f_fsi_calc },
+        { "F_FSI_CALC (free space)", layer1_scenarios, test_f_fsi_calc },
+        { "F_FSI_CALC (next free cluster)", layer1_scenarios, test_f_fsi_calc_nxt_free },
         { "F_CREATE", layer1_scenarios, test_f_create },
 #endif
         { NULL, NULL, NULL },
