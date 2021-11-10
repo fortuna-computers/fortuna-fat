@@ -18,7 +18,32 @@ extern uint8_t _binary_tests_TAGS_TXT_end[];
 #define X_OK(expr) { last_result = (expr); if (last_result != F_OK) return false; }
 #define ASSERT(expr) { if (!(expr)) return false; }
 
-static uint32_t add_tags_txt()
+static __attribute__((unused)) void print_fat(FFat* f)
+{
+    const uint64_t sector = f->F_ABS + f->F_FATST;
+    for (size_t i = 0; i < f->F_FATSZ; ++i) {
+        f->F_RAWSEC = sector + i;
+        ffat_op(f, F_READ_RAW, date_time);
+        
+        if (f->F_TYPE == FAT16) {
+            for (size_t j = 0; j < 512; j += 2) {
+                printf("%c%02X%02X", j % 32 == 0 ? '\n' : ' ', f->buffer[j+1], f->buffer[j]);
+                if (j > 8 && memcmp(&f->buffer[j-8], "\0\0\0\0\0\0\0\0", 8) == 0)
+                    goto done;
+            }
+        } else {
+            for (size_t j = 0; j < 512; j += 4) {
+                printf("%c%02X%02X%02X%02X", j % 32 == 0 ? '\n' : ' ', f->buffer[j+3], f->buffer[j+2], f->buffer[j+1], f->buffer[j+0]);
+                if (j > 8 && memcmp(&f->buffer[j-8], "\0\0\0\0\0\0\0\0", 8) == 0)
+                    goto done;
+            }
+        }
+    }
+done:
+    printf("\n");
+}
+
+static uint32_t add_tags_txt(uint32_t* last_cluster)
 {
     FIL fp;
     UINT bw;
@@ -28,6 +53,8 @@ static uint32_t add_tags_txt()
     R(f_open(&fp, "tags.txt", FA_CREATE_NEW | FA_WRITE))
     R(f_write(&fp, _binary_tests_TAGS_TXT_start, (_binary_tests_TAGS_TXT_end - _binary_tests_TAGS_TXT_start), &bw))
     uint32_t file_cluster = fp.obj.sclust;
+    if (last_cluster)
+        *last_cluster = fp.clust;
     R(f_close(&fp))
     R(f_mount(NULL, "", 0));
     free(fatfs);
@@ -140,6 +167,8 @@ static bool test_f_fsi_calc(FFat* f, __attribute__((unused)) Scenario scenario)
 
 static bool test_f_fsi_calc_nxt_free(FFat* f, __attribute__((unused)) Scenario scenario)
 {
+    print_fat(f);
+    
     // check next free cluster before recalculation
     f->F_RAWSEC = f->F_ABS + 1;  // FSInfo sector
     X_OK(ffat_op(f, F_READ_RAW, date_time))
@@ -225,7 +254,7 @@ static bool test_f_create(FFat* f, Scenario scenario)
 
 static bool test_f_seek_fw_one(FFat* f, Scenario scenario)
 {
-    uint32_t file_cluster = add_tags_txt();
+    uint32_t file_cluster = add_tags_txt(NULL);
     
     // here we're guessing that the cluster for this file is 4
     f->F_CLSTR = file_cluster;
@@ -244,6 +273,22 @@ static bool test_f_seek_fw_one(FFat* f, Scenario scenario)
         ASSERT(f->F_CLSTR == file_cluster + 1);
         ASSERT(f->F_SCTR == 0);
     }
+    
+    return true;
+}
+
+static bool test_f_seek_fw_end(FFat* f, Scenario scenario)
+{
+    uint32_t last_cluster;
+    uint32_t file_cluster = add_tags_txt(&last_cluster);
+    
+    // here we're guessing that the cluster for this file is 4
+    f->F_CLSTR = file_cluster;
+    f->F_SCTR = 0;
+    f->F_PARM = (uint32_t) -1;
+    X_OK(ffat_op(f, F_SEEK_FW, date_time))
+    
+    ASSERT(f->F_CLSTR == last_cluster);
     
     return true;
 }
@@ -275,6 +320,7 @@ static const Test test_list_[] = {
         { "F_FSI_CALC (next free cluster)", layer1_scenarios, test_f_fsi_calc_nxt_free },
         { "F_CREATE", layer1_scenarios, test_f_create },
         { "F_SEEK_FW (one sector)", layer1_scenarios, test_f_seek_fw_one },
+        { "F_SEEK_FW (last sector)", layer1_scenarios, test_f_seek_fw_end },
 #endif
         { NULL, NULL, NULL },
 };

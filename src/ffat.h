@@ -53,7 +53,7 @@ typedef struct __attribute__((__packed__)) FFat {
 #endif
     };
 #if LAYER_IMPLEMENTED >= 1
-    uint8_t  F_PARM;          // additional parameter
+    uint32_t F_PARM;          // additional parameter
     uint16_t F_ROOT;          // root directory sector
     uint8_t  F_SPC;           // sectors per cluster
     uint32_t F_ABS;           // partition sector start (from beginning of disk)

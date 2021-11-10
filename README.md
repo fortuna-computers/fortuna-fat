@@ -66,7 +66,7 @@ These registers can be used to pass parameters and receive values from requests:
 |------|-------------|------|----|
 | `F_CLSTR` | Number of the data cluster to which the operation refers to. | 32-bit | Read/write |
 | `F_SCTR`  | Number of the sector inside the cluster. | 16-bit | Read/write |
-| `F_PARM`  | Additional parameter used in some operations. | 8-bit | Read/write |
+| `F_PARM`  | Additional parameter used in some operations. | 32-bit | Read/write |
 | `F_ROOT`  | Number of the root directory sector (relative to start of data sectors). | 16-bit | Read-only  |
 
 These registers are usually not required, but can provide additional information to the user:
