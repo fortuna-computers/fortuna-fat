@@ -344,4 +344,17 @@ FFatResult f_seek_fw(FFat* f)
     return F_OK;
 }
 
+FFatResult f_append(FFat* f)
+{
+    // load FSINFO
+    
+    // create new cluster as EOF
+    
+    // redirect previous cluster to new cluster
+    
+    // update FSINFO
+    
+    return F_OK;
+}
+
 // endregion

@@ -11,5 +11,6 @@ FFatResult f_fsi_calc(FFat* f);
 
 FFatResult f_create(FFat* f);
 FFatResult f_seek_fw(FFat* f);
+FFatResult f_append(FFat* f);
 
 #endif
