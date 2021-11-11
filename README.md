@@ -1,4 +1,4 @@
-# fortuna-fat32
+# fortuna-fat
 
 [![Automated tests](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/automated-tests.yml/badge.svg?branch=master)](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/automated-tests.yml)
 [![Code size](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/code-size.yml/badge.svg?branch=master)](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/code-size.yml)
@@ -58,40 +58,56 @@ not create a new file in the directory. This needs to be done in a superior laye
 
 ### Registers
 
+When refering to the registers, all clusters/sectors are counted from beginning of partition, except for `F_ABS`.
+
+These registers can be used to pass parameters and receive values from requests:
+
 | Name | Description | Size | RW |
 |------|-------------|------|----|
 | `F_CLSTR` | Number of the data cluster to which the operation refers to. | 32-bit | Read/write |
 | `F_SCTR`  | Number of the sector inside the cluster. | 16-bit | Read/write |
-| `F_PARM`  | Additional parameter used in some operations. | 8-bit | Read/write |
-| `F_ROOT`  | Number of the root directory sector (relative to start of data sectors). | 16-bit | Read-only
-| `F_SPC`   | Number of sectors per cluster | 16-bit | Read-only
+| `F_PARM`  | Additional parameter used in some operations. | 32-bit | Read/write |
+| `F_ROOT`  | Number of the root directory sector (relative to start of data sectors). | 16-bit | Read-only  |
+| `F_SPC`   | Sectors per cluster. This is important while reading/writing to files. Since most commands are based on clusters, and not sectors, it is necessary to know how many sectors are in a cluster. | 8-bit | Read-only |
+
+These registers are usually not required, but can provide additional information to the user:
+
+| Name | Description | Size | RW |
+|------|-------------|------|----|
+| `F_ABS`   | Partition sector start (counting from beginning of disk) | 32-bit | Read-only |
+| `F_FATST` | FAT sector start | 16-bit | Read-only |
+| `F_FATSZ` | FAT size | 32-bit | Read-only |
+| `F_DATA`  | Data starting sector | 32-bit | Read-only |
+| `F_NFATS` | Number of FATs | 3 bits (0 ~ 7) | Read-only |
+| `F_TYPE`  | Filesystem type | 2 bits (0: FAT16, 1: FAT32) | Read-only |
+
 
 ### Supported operations
 
-| Operation    | Description | Additional information |
-|--------------|-------------|-------|
-| `F_INIT`     | Reads a partition boot sector and initialize the partition. When changing partitions, new `F_INIT` must be issued. | `F_PARM`: partition number |
-| `F_BOOT`     | Load boot sector into buffer. |
-| `F_FREE`     | Returns number of free clusters into first 4 bytes of buffer. |
-| `F_CREATE`   | Create a new file in FAT. |
-| `F_SEEK_FW`  | Move* forward a number of sectors | `F_PARM`: number of sectors to move forward. |
-| `F_SEEK_EOF` | Move* until the end of file. |
-| `F_APPEND`   | Move* until the end of file and append a new sector. |
-| `F_TRUNCATE` | Limit the file size to the one specified in `F_CLSTR` and `F_SCTR`, clearing all following FAT entries. |
-| `F_READ`     | Read a sector in a data cluster. |
-| `F_WRITE`    | Write a sector in a data cluster. |
-
-* Move operations will change `F_CLSTR` and `F_SCTR`, always following the linked list in FAT until the specified parameter.
+| Operation      | Description | Additional information |
+|----------------|-------------|-------|
+| `F_INIT`       | Reads a partition boot sector and initialize the partition. When changing partitions, new `F_INIT` must be issued. | `F_PARM`: partition number |
+| `F_BOOT`       | Load boot sector into buffer. |
+| `F_FREE`       | Returns number of free clusters into first 4 bytes of buffer. |
+| `F_FSI_CALC`   | Recalculate FSINFO values (free clusters and next free cluster). |
+| `F_SEEK`       | Advance `F_CLSTR` a number of clusters. | `F_PARM`: number of clusters to move forward. Use `0xFFFFFFFF` to go to EOF. |
+| `F_APPEND`     | Advance `F_CLSTR` until the cluster that marks the end of file, and append a new cluster. If `F_CLSTR == 0`, it'll create a new file. |
+| `F_TRUNCATE`   | Limit the file size to the one specified in `F_CLSTR`, clearing all following FAT entries. |
+| `F_REMOVE`     | Remove a file from FAT. `F_CLSTR` should be pointing to the initial file cluster. |
+| `F_READ_DATA`  | Read a sector in a data cluster, based on `F_CLSTR` and `F_SCTR`. |
+| `F_WRITE_DATA` | Write a sector in a data cluster, based on `F_CLSTR` and `F_SCTR`. |
 
 ## Possible responses (`F_RSLT`)
 
 | Code | Response |
 |------|----------|
+| `F_NO_PARTITION`    | The partition does not exist. |
 | `F_UNSUPPORTED_FS`  | The file system is not FAT16 or FAT32. |
 | `F_BPS_NOT_512`     | Bytes per sector is not 512. |
 | `F_DEVICE_FULL`     | There's no space left in the device. |
 | `F_SEEK_PAST_EOF`   | A seek command moved the pointer past EOF. |
 | `F_INVALID_FAT_CLUSTER` | A command was issued on a invalid FAT cluster. |
+| `F_NOT_IMPLEMENTED` | A request is being made to a command that was not implemented yet. |
 
 ---
 

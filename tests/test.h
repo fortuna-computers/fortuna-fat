@@ -6,9 +6,9 @@
 #include "scenario.h"
 
 typedef struct Test {
-    const char* name;
-    void (*scenarios[MAX_SCENARIOS])(void);
-    bool (*run_test)(FFat*);
+    const char*     name;
+    Scenario const* scenarios;
+    bool            (*run_test)(FFat*, Scenario scenario);
 } Test;
 
 const Test* test_list;

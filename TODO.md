@@ -8,15 +8,16 @@
 
 ### Layer 1
 
-- [ ] Add FSFAT for test support
-- [ ] Create stuff in header (operations, registers)
-- [ ] [ ] F_INIT (FAT16 and 32)
-- [ ] F_BOOT
-- [ ] F_FREE
-- [ ] F_CREATE
-- [ ] F_SEEK_FW
-- [ ] F_SEEK_EOF
-- [ ] F_APPEND
-- [ ] F_TRUNCATE
-- [ ] F_READ
-- [ ] F_WRITE
+- [X] Add FSFAT for test support
+- [X] Create stuff in header (operations, registers)
+- [X] F_INIT (FAT16 and 32)
+- [X] F_BOOT
+- [X] F_FREE
+- [X] F_FSI_CALC
+- [X] F_CREATE
+- [X] F_SEEK
+- [X] F_APPEND
+- [X] F_TRUNCATE
+- [X] F_REMOVE
+- [X] F_READ
+- [X] F_WRITE

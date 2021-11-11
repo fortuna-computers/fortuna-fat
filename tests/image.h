@@ -10,4 +10,6 @@ extern uint64_t img_sz;
 extern uint8_t  img_data[];
 extern bool     emulate_io_error;
 
+void export_image(const char* filename);
+
 #endif //FORTUNA_FAT_IMAGE_H
