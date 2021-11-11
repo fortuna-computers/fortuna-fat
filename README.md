@@ -68,19 +68,18 @@ These registers can be used to pass parameters and receive values from requests:
 | `F_SCTR`  | Number of the sector inside the cluster. | 16-bit | Read/write |
 | `F_PARM`  | Additional parameter used in some operations. | 32-bit | Read/write |
 | `F_ROOT`  | Number of the root directory sector (relative to start of data sectors). | 16-bit | Read-only  |
+| `F_SPC`   | Sectors per cluster. This is important while reading/writing to files. Since most commands are based on clusters, and not sectors, it is necessary to know how many sectors are in a cluster. | 8-bit | Read-only |
 
 These registers are usually not required, but can provide additional information to the user:
 
 | Name | Description | Size | RW |
 |------|-------------|------|----|
-| `F_SPC`   | Number of sectors per cluster | 8-bit | Read-only |
 | `F_ABS`   | Partition sector start (counting from beginning of disk) | 32-bit | Read-only |
 | `F_FATST` | FAT sector start | 16-bit | Read-only |
 | `F_FATSZ` | FAT size | 32-bit | Read-only |
 | `F_DATA`  | Data starting sector | 32-bit | Read-only |
 | `F_NFATS` | Number of FATs | 3 bits (0 ~ 7) | Read-only |
 | `F_TYPE`  | Filesystem type | 2 bits (0: FAT16, 1: FAT32) | Read-only |
-
 
 
 ### Supported operations
@@ -91,11 +90,11 @@ These registers are usually not required, but can provide additional information
 | `F_BOOT`     | Load boot sector into buffer. |
 | `F_FREE`     | Returns number of free clusters into first 4 bytes of buffer. |
 | `F_FSI_CALC` | Recalculate FSINFO values (free clusters and next free cluster). |
-| `F_SEEK`     | Advance `F_CLSTR` and `F_SCTR` a number of sectors | `F_PARM`: number of sectors to move forward. Use `0xFFFFFFFF` to go to EOF. |
-| `F_APPEND`   | Advance `F_CLSTR` and `F_SCTR` until the end of file and append a new sector. If `F_CLSTR == 0`, it'll create a new file. |
-| `F_TRUNCATE` | Limit the file size to the one specified in `F_CLSTR` and `F_SCTR`, clearing all following FAT entries. |
-| `F_READ`     | Read a sector in a data cluster. |
-| `F_WRITE`    | Write a sector in a data cluster. |
+| `F_SEEK`     | Advance `F_CLSTR` a number of clusters. | `F_PARM`: number of clusters to move forward. Use `0xFFFFFFFF` to go to EOF. |
+| `F_APPEND`   | Advance `F_CLSTR` until the cluster that marks the end of file, and append a new cluster. If `F_CLSTR == 0`, it'll create a new file. |
+| `F_TRUNCATE` | Limit the file size to the one specified in `F_CLSTR`, clearing all following FAT entries. |
+| `F_READ`     | Read a sector in a data cluster, based on `F_CLSTR` and `F_SCTR`. |
+| `F_WRITE`    | Write a sector in a data cluster, based on `F_CLSTR` and `F_SCTR`. |
 
 ## Possible responses (`F_RSLT`)
 

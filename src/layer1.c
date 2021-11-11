@@ -300,20 +300,12 @@ FFatResult f_seek(FFat* f)
     uint32_t next_cluster = f->F_CLSTR;
     
     for (uint32_t i = 0; i < f->F_PARM; ++i) {
-        
-        if (f->F_SCTR < f->F_SPC - 1) {   // go to next sector
-            ++f->F_SCTR;
-            
-        } else {   // go to next cluster
-            TRY(fat_load_cluster(f, f->F_CLSTR, &next_cluster))   // TODO - don't load FAT from disk every time
-            if (next_cluster >= ((f->F_TYPE == FAT16) ? FAT16_EOF : FAT32_EOF)) {
-                return F_SEEK_PAST_EOF;
-            } else {
-                f->F_CLSTR = next_cluster;
-                f->F_SCTR = 0;
-            }
+        TRY(fat_load_cluster(f, f->F_CLSTR, &next_cluster))   // TODO - don't load FAT from disk every time
+        if (next_cluster >= ((f->F_TYPE == FAT16) ? FAT16_EOF : FAT32_EOF)) {
+            return F_SEEK_PAST_EOF;
+        } else {
+            f->F_CLSTR = next_cluster;
         }
-        
     }
     
     return F_OK;
@@ -321,11 +313,6 @@ FFatResult f_seek(FFat* f)
 
 FFatResult f_append(FFat* f)
 {
-    if (f->F_CLSTR != 0 && f->F_SCTR < (f->F_SPC - 1)) {  // if we're not on the last sector of the cluster, we simply append a new sector
-        ++f->F_SCTR;
-        return F_OK;
-    }
-    
     uint32_t previous_cluster = f->F_CLSTR;
     
     // find current space used and next free cluster
@@ -358,7 +345,6 @@ FFatResult f_append(FFat* f)
         f->F_CLSTR = next_free_cluster;
     }
     
-    f->F_SCTR = 0;
     return F_OK;
 }
 

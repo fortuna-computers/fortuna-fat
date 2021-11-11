@@ -219,23 +219,11 @@ static bool test_f_seek_one(FFat* f, Scenario scenario)
 {
     uint32_t file_cluster = add_tags_txt(NULL);
     
-    // here we're guessing that the cluster for this file is 4
     f->F_CLSTR = file_cluster;
-    f->F_SCTR = 0;
     f->F_PARM = 1;
     X_OK(ffat_op(f, F_SEEK))
     
-    if (scenario != scenario_fat32_spc1) {
-        ASSERT(f->F_CLSTR == file_cluster);
-        ASSERT(f->F_SCTR == 1);
-        while (f->F_CLSTR == file_cluster)
-            X_OK(ffat_op(f, F_SEEK))
-        ASSERT(f->F_CLSTR == file_cluster + 1);  // here we're also guessing that FatFS used sector 4 after sector 3
-        ASSERT(f->F_SCTR == 0);
-    } else {
-        ASSERT(f->F_CLSTR == file_cluster + 1);
-        ASSERT(f->F_SCTR == 0);
-    }
+    ASSERT(f->F_CLSTR == file_cluster + 1);
     
     return true;
 }
@@ -246,13 +234,11 @@ static bool test_f_seek_end(FFat* f, UNUSED Scenario scenario)
     uint32_t file_cluster = add_tags_txt(&last_cluster);
     
     f->F_CLSTR = file_cluster;
-    f->F_SCTR = 0;
     f->F_PARM = (uint32_t) -1;
     FFatResult r = ffat_op(f, F_SEEK);
     
     ASSERT(r == F_SEEK_PAST_EOF)
     ASSERT(f->F_CLSTR == last_cluster)
-    ASSERT(f->F_SCTR == f->F_SPC - 1)
     
     return true;
 }
@@ -268,7 +254,6 @@ static bool test_f_append_create_file(FFat* f, Scenario scenario)
     X_OK(ffat_op(f, F_APPEND))
     
     ASSERT(f->F_CLSTR > 1 && f->F_CLSTR < 100)
-    ASSERT(f->F_SCTR == 0)
     
     // check if FAT entry was created with EOF
     X_OK(ffat_op(f, F_READ_RAW))
@@ -298,21 +283,13 @@ static bool test_f_append_one_to_new_file(FFat* f, Scenario UNUSED scenario)
     f->F_CLSTR = 0;
     X_OK(ffat_op(f, F_APPEND))
     uint32_t file_cluster = f->F_CLSTR;
-    uint16_t last_sector = f->F_SCTR;
     
     ASSERT(file_cluster > 1 && file_cluster < 100)
     
     // append clusters
     while (true) {
         X_OK(ffat_op(f, F_APPEND))
-        if (f->F_CLSTR == file_cluster) {
-            ASSERT(f->F_SCTR > last_sector)
-            last_sector = f->F_SCTR;
-        } else {
-            ASSERT(f->F_CLSTR > file_cluster)
-            ASSERT(f->F_SCTR == 0)
-            break;
-        }
+        ASSERT(f->F_CLSTR > file_cluster)
     }
     
     // check FAT
@@ -340,7 +317,6 @@ static bool test_f_append_to_existing_file(FFat* f, UNUSED Scenario scenario)
     uint32_t file_cluster = add_tags_txt(&last_cluster);
     
     f->F_CLSTR = file_cluster;
-    f->F_SCTR = 0;
     
     return true;
 }
