@@ -15,7 +15,7 @@
 - [X] F_FREE
 - [X] F_FSI_CALC
 - [X] F_CREATE
-- [X] F_SEEK_FW
+- [X] F_SEEK
 - [ ] F_APPEND
 - [ ] F_TRUNCATE
 - [ ] F_READ

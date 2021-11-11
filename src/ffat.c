@@ -15,8 +15,7 @@ FFatResult ffat_op(FFat* f, FFat32Op op)
         case F_BOOT:      return f->F_RSLT = f_boot(f);
         case F_FREE:      return f->F_RSLT = f_free(f);
         case F_FSI_CALC:  return f->F_RSLT = f_fsi_calc(f);
-        case F_CREATE:    return f->F_RSLT = f_create(f);
-        case F_SEEK_FW:   return f->F_RSLT = f_seek_fw(f);
+        case F_SEEK:      return f->F_RSLT = f_seek(f);
         case F_APPEND:    return f->F_RSLT = f_append(f);
 #endif
         default:          return f->F_RSLT = F_NOT_IMPLEMENTED;

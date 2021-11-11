@@ -91,14 +91,11 @@ These registers are usually not required, but can provide additional information
 | `F_BOOT`     | Load boot sector into buffer. |
 | `F_FREE`     | Returns number of free clusters into first 4 bytes of buffer. |
 | `F_FSI_CALC` | Recalculate FSINFO values (free clusters and next free cluster). |
-| `F_CREATE`   | Create a new file in FAT. |
-| `F_SEEK_FW`  | Move* forward a number of sectors | `F_PARM`: number of sectors to move forward. Use `-1` to go to EOF. |
-| `F_APPEND`   | Move* until the end of file and append a new sector. |
+| `F_SEEK`     | Advance `F_CLSTR` and `F_SCTR` a number of sectors | `F_PARM`: number of sectors to move forward. Use `0xFFFFFFFF` to go to EOF. |
+| `F_APPEND`   | Advance `F_CLSTR` and `F_SCTR` until the end of file and append a new sector. If `F_CLSTR == 0`, it'll create a new file. |
 | `F_TRUNCATE` | Limit the file size to the one specified in `F_CLSTR` and `F_SCTR`, clearing all following FAT entries. |
 | `F_READ`     | Read a sector in a data cluster. |
 | `F_WRITE`    | Write a sector in a data cluster. |
-
-* Move operations will change `F_CLSTR` and `F_SCTR`, always following the linked list in FAT until the specified parameter.
 
 ## Possible responses (`F_RSLT`)
 

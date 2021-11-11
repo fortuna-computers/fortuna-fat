@@ -292,36 +292,7 @@ FFatResult f_fsi_calc(FFat* f)
 
 // region -> File management
 
-FFatResult f_create(FFat* f)
-{
-    // find current space used and next free cluster
-    if (f->F_TYPE == FAT32) {
-        FFsInfo fs_info;
-        TRY(load_fsinfo(f, &fs_info))
-    
-        // create next_free_cluster in all FATs
-        uint32_t next_free_cluster;
-        TRY(fat_find_next_free_cluster(f, fs_info.last_cluster_allocated, &next_free_cluster))
-        TRY(fat_update_cluster(f, next_free_cluster, FAT32_EOC))
-        f->F_CLSTR = next_free_cluster;
-        
-        // update FSINFO
-        fs_info.last_cluster_allocated = next_free_cluster;
-        --fs_info.free_clusters;
-        TRY(write_fsinfo(f, &fs_info))
-        
-    } else {
-        uint32_t next_free_cluster;
-        TRY(fat_find_next_free_cluster(f, 0, &next_free_cluster))
-        TRY(fat_update_cluster(f, next_free_cluster, FAT16_EOC))
-        f->F_CLSTR = next_free_cluster;
-    }
-    
-    f->F_SCTR = 0;
-    return F_OK;
-}
-
-FFatResult f_seek_fw(FFat* f)
+FFatResult f_seek(FFat* f)
 {
     if (f->F_PARM == 0)
         return F_OK;
@@ -350,7 +321,7 @@ FFatResult f_seek_fw(FFat* f)
 
 FFatResult f_append(FFat* f)
 {
-    if (f->F_SCTR < (f->F_SPC - 1)) {  // if we're not on the last sector of the cluster, we simply append a new sector
+    if (f->F_CLSTR != 0 && f->F_SCTR < (f->F_SPC - 1)) {  // if we're not on the last sector of the cluster, we simply append a new sector
         ++f->F_SCTR;
         return F_OK;
     }
@@ -368,7 +339,8 @@ FFatResult f_append(FFat* f)
         TRY(fat_update_cluster(f, next_free_cluster, FAT32_EOC))
     
         // redirect previous cluster to new cluster
-        TRY(fat_update_cluster(f, previous_cluster, next_free_cluster))
+        if (previous_cluster != 0)
+            TRY(fat_update_cluster(f, previous_cluster, next_free_cluster))
         
         // update FSINFO
         fs_info.last_cluster_allocated = next_free_cluster;
@@ -381,7 +353,8 @@ FFatResult f_append(FFat* f)
         uint32_t next_free_cluster;
         TRY(fat_find_next_free_cluster(f, 0, &next_free_cluster))
         TRY(fat_update_cluster(f, next_free_cluster, FAT16_EOC))
-        TRY(fat_update_cluster(f, previous_cluster, next_free_cluster))
+        if (previous_cluster != 0)
+            TRY(fat_update_cluster(f, previous_cluster, next_free_cluster))
         f->F_CLSTR = next_free_cluster;
     }
     
