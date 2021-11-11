@@ -378,6 +378,30 @@ static bool test_f_truncate_3rd_sector(FFat* f, UNUSED Scenario scenario)
     return true;
 }
 
+static bool test_f_remove(FFat* f, UNUSED Scenario scenario)
+{
+    uint32_t last_cluster;
+    uint32_t file_cluster = add_tags_txt(&last_cluster);
+ 
+    // remove file
+    f->F_CLSTR = file_cluster;
+    X_OK(ffat_op(f, F_REMOVE))
+    
+    // check FAT
+    X_OK(ffat_op(f, F_READ_RAW))
+    if (scenario == scenario_fat16) {
+        ASSERT(*(uint16_t *) &f->buffer[file_cluster * 2] == 0)
+        ASSERT(*(uint16_t *) &f->buffer[(file_cluster + 2) * 2] == 0)
+        ASSERT(*(uint16_t *) &f->buffer[last_cluster * 2] == 0x0)
+    } else {
+        ASSERT((*(uint32_t *) &f->buffer[file_cluster * 4] & 0x0fffffff) == 0)
+        ASSERT((*(uint32_t *) &f->buffer[(file_cluster + 2) * 4] & 0x0fffffff) == 0)
+        ASSERT((*(uint32_t *) &f->buffer[last_cluster * 4] & 0x0fffffff) == 0x0)
+    }
+    
+    return true;
+}
+
 #endif  // LAYER_IMPLEMENT >= 1
 
 // endregion
@@ -414,6 +438,7 @@ static const Test test_list_[] = {
         { "F_APPEND (append to existing file)", layer1_scenarios, test_f_append_to_existing_file },
         { "F_TRUNCATE (first sector)", layer1_scenarios, test_f_truncate_first_sector },
         { "F_TRUNCATE (3rd sector)", layer1_scenarios, test_f_truncate_3rd_sector },
+        { "F_REMOVE", layer1_scenarios, test_f_remove },
 #endif
         { NULL, NULL, NULL },
 };

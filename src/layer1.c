@@ -370,4 +370,11 @@ FFatResult f_truncate_(FFat* f)
     return F_OK;
 }
 
+FFatResult f_remove(FFat* f)
+{
+    TRY(f_truncate_(f))
+    TRY(fat_update_cluster(f, f->F_CLSTR, FAT_CLUSTER_FREE))
+    return F_OK;
+}
+
 // endregion

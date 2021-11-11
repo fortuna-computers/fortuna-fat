@@ -9,9 +9,9 @@ FFatResult f_boot(FFat* f);
 FFatResult f_free(FFat* f);
 FFatResult f_fsi_calc(FFat* f);
 
-FFatResult f_create(FFat* f);
 FFatResult f_seek(FFat* f);
 FFatResult f_append(FFat* f);
 FFatResult f_truncate_(FFat* f);
+FFatResult f_remove(FFat* f);
 
 #endif

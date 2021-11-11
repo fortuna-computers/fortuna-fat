@@ -18,6 +18,7 @@ FFatResult ffat_op(FFat* f, FFat32Op op)
         case F_SEEK:      return f->F_RSLT = f_seek(f);
         case F_APPEND:    return f->F_RSLT = f_append(f);
         case F_TRUNCATE:  return f->F_RSLT = f_truncate_(f);
+        case F_REMOVE:    return f->F_RSLT = f_remove(f);
 #endif
         default:          return f->F_RSLT = F_NOT_IMPLEMENTED;
     }
