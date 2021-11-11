@@ -8,7 +8,6 @@
 #include "scenario.h"
 #include "ff/ff.h"
 
-static FDateTime date_time = {};
 static FFatResult last_result;
 
 // region -> Helper functions
@@ -22,7 +21,7 @@ static __attribute__((unused)) void print_fat(FFat* f)
     const uint64_t sector = f->F_ABS + f->F_FATST;
     for (size_t i = 0; i < f->F_FATSZ; ++i) {
         f->F_RAWSEC = sector + i;
-        ffat_op(f, F_READ_RAW, date_time);
+        ffat_op(f, F_READ_RAW);
         
         if (f->F_TYPE == FAT16) {
             for (size_t j = 0; j < 512; j += 2) {
@@ -64,6 +63,26 @@ static uint32_t add_tags_txt(uint32_t* last_cluster)
     return file_cluster;
 }
 
+static FFatResult check_fsinfo(FFat* f, uint32_t* last_used, uint32_t* free_clusters)
+{
+    if (f->F_TYPE == FAT16) {
+        if (last_used)
+            *last_used = 0;
+        if (free_clusters) {
+            X_OK(ffat_op(f, F_FREE))
+            *free_clusters = *(uint32_t *) f->buffer;
+        }
+    } else {
+        f->F_RAWSEC = f->F_ABS + 1;
+        X_OK(ffat_op(f, F_READ_RAW))
+        if (last_used)
+            *last_used = *(uint32_t *) &f->buffer[492];
+        if (free_clusters)
+            *free_clusters = *(uint32_t *) &f->buffer[488];
+    }
+    return F_OK;
+}
+
 // endregion
 
 // region -> Layer 0
@@ -74,15 +93,15 @@ static bool test_raw_sector(FFat* f, Scenario scenario)
     
     f->F_RAWSEC = 0xaf;
     
-    X_OK(ffat_op(f, F_READ_RAW, date_time))
+    X_OK(ffat_op(f, F_READ_RAW))
     ASSERT(f->buffer[0] == 0xaf)
     ASSERT(f->buffer[511] == 0xaf)
     
     memset(f->buffer, 0x33, 512);
-    X_OK(ffat_op(f, F_WRITE_RAW, date_time))
+    X_OK(ffat_op(f, F_WRITE_RAW))
     memset(f->buffer, 0, 512);
     
-    X_OK(ffat_op(f, F_READ_RAW, date_time))
+    X_OK(ffat_op(f, F_READ_RAW))
     ASSERT(f->buffer[0] == 0x33)
     ASSERT(f->buffer[511] == 0x33)
     ASSERT(img_data[0xaf * SECTOR_SZ] == 0x33);
@@ -95,7 +114,7 @@ static bool test_raw_sector_past_end_of_image(FFat* f, Scenario scenario)
     (void) scenario;
     
     f->F_RAWSEC = 0x100000;
-    FFatResult r = ffat_op(f, F_READ_RAW, date_time);
+    FFatResult r = ffat_op(f, F_READ_RAW);
     return r == F_IO_ERROR;
 }
 
@@ -105,7 +124,7 @@ static bool test_raw_sector_io_error(FFat* f, Scenario scenario)
     
     f->F_RAWSEC = 0;
     emulate_io_error = true;
-    FFatResult r = ffat_op(f, F_READ_RAW, date_time);
+    FFatResult r = ffat_op(f, F_READ_RAW);
     bool ok = (r == F_IO_ERROR);
     emulate_io_error = false;
     return ok;
@@ -120,7 +139,7 @@ static bool test_raw_sector_io_error(FFat* f, Scenario scenario)
 static bool test_f_init(FFat* f, Scenario scenario)
 {
     f->F_PARM = 0;
-    X_OK(ffat_op(f, F_INIT, date_time))
+    X_OK(ffat_op(f, F_INIT))
     
     if (scenario == scenario_fat32_spc1)
         ASSERT(f->F_SPC == 1)
@@ -133,7 +152,7 @@ static bool test_f_init(FFat* f, Scenario scenario)
 
 static bool test_f_boot(FFat* f, __attribute__((unused)) Scenario scenario)
 {
-    X_OK(ffat_op(f, F_BOOT, date_time))
+    X_OK(ffat_op(f, F_BOOT))
     
     ASSERT(f->buffer[510] == 0x55);
     ASSERT(f->buffer[511] == 0xaa);
@@ -143,7 +162,7 @@ static bool test_f_boot(FFat* f, __attribute__((unused)) Scenario scenario)
 
 static bool test_f_free(FFat* f, Scenario scenario)
 {
-    X_OK(ffat_op(f, F_FREE, date_time))
+    X_OK(ffat_op(f, F_FREE))
     uint32_t free1 = *(uint32_t *) f->buffer;
     
     DWORD free2;
@@ -163,11 +182,11 @@ static bool test_f_free(FFat* f, Scenario scenario)
 
 static bool test_f_fsi_calc(FFat* f, __attribute__((unused)) Scenario scenario)
 {
-    X_OK(ffat_op(f, F_FREE, date_time))
+    X_OK(ffat_op(f, F_FREE))
     uint32_t free1 = *(uint32_t *) f->buffer;
     
-    X_OK(ffat_op(f, F_FSI_CALC, date_time))
-    X_OK(ffat_op(f, F_FREE, date_time))
+    X_OK(ffat_op(f, F_FSI_CALC))
+    X_OK(ffat_op(f, F_FREE))
     uint32_t free2 = *(uint32_t *) f->buffer;
     
     ASSERT(free1 > (free2 * 0.8) && free1 < (free1 * 1.2))
@@ -179,15 +198,15 @@ static bool test_f_fsi_calc_nxt_free(FFat* f, __attribute__((unused)) Scenario s
 {
     // check next free cluster before recalculation
     f->F_RAWSEC = f->F_ABS + 1;  // FSInfo sector
-    X_OK(ffat_op(f, F_READ_RAW, date_time))
+    X_OK(ffat_op(f, F_READ_RAW))
     uint32_t nxt_free_1 = *(uint32_t *) &f->buffer[492];
     
     // recalculate
-    X_OK(ffat_op(f, F_FSI_CALC, date_time))
+    X_OK(ffat_op(f, F_FSI_CALC))
     
     // check next free cluster after recalculation
     f->F_RAWSEC = f->F_ABS + 1;  // FSInfo sector
-    X_OK(ffat_op(f, F_READ_RAW, date_time))
+    X_OK(ffat_op(f, F_READ_RAW))
     uint32_t nxt_free_2 = *(uint32_t *) &f->buffer[492];
     
     ASSERT(nxt_free_1 == nxt_free_2)
@@ -197,68 +216,30 @@ static bool test_f_fsi_calc_nxt_free(FFat* f, __attribute__((unused)) Scenario s
 
 static bool test_f_create(FFat* f, Scenario scenario)
 {
-    // check next free cluster before creation
-    uint32_t nxt_free_1;
-    if (scenario != scenario_fat16) {
-        f->F_RAWSEC = f->F_ABS + 1;  // FSInfo sector
-        X_OK(ffat_op(f, F_READ_RAW, date_time))
-        nxt_free_1 = *(uint32_t *) &f->buffer[492];
-    }
-    
-    // check free space before creation
-    X_OK(ffat_op(f, F_FREE, date_time))
-    uint32_t free1 = *(uint32_t *) f->buffer;
-    
-    // load first FAT entry in buffer and find what would be the next cluster to be created
-    f->F_RAWSEC = f->F_ABS + f->F_FATST;
-    X_OK(ffat_op(f, F_READ_RAW, date_time))
-    
-    uint32_t expected_cluster = (uint32_t) -1;
-    
-    // find cluster to be created
-    if (scenario == scenario_fat16) {
-        for (size_t i = 0; i < f->F_FATSZ; i += sizeof(uint16_t)) {
-            if (*(uint16_t *) &f->buffer[i] == 0) {
-                expected_cluster = i / 2;
-                break;
-            }
-        }
-    } else {
-        for (size_t i = 0; i < f->F_FATSZ; i += sizeof(uint32_t)) {
-            if (*(uint32_t *) &f->buffer[i] == 0) {
-                expected_cluster = i / 4;
-                break;
-            }
-        }
-    }
-    ASSERT(expected_cluster != (uint32_t) -1)
+    // get FSInfo before creation
+    uint32_t last_used_before, free_before;
+    X_OK(check_fsinfo(f, &last_used_before, &free_before))
     
     // create new FAT entry
-    X_OK(ffat_op(f, F_CREATE, date_time))
+    X_OK(ffat_op(f, F_CREATE))
     
-    ASSERT(f->F_CLSTR == expected_cluster)
+    ASSERT(f->F_CLSTR > 1 && f->F_CLSTR < 100)
     ASSERT(f->F_SCTR == 0)
     
-    // check if FAT entry was created
-    X_OK(ffat_op(f, F_READ_RAW, date_time))
+    // check if FAT entry was created with EOF
+    X_OK(ffat_op(f, F_READ_RAW))
     if (scenario == scenario_fat16)
-        ASSERT(*(uint16_t *) &f->buffer[expected_cluster] >= 0xfff8)
+        ASSERT(*(uint16_t *) &f->buffer[f->F_CLSTR * 2] >= 0xfff8)
     else
-        ASSERT((*(uint32_t *) &f->buffer[expected_cluster] & 0x0fffffff) >= 0x0ffffff8)
+        ASSERT((*(uint32_t *) &f->buffer[f->F_CLSTR * 4] & 0x0fffffff) >= 0x0ffffff8)
+        
+    // get FSInfo after creation
+    uint32_t last_used_after, free_after;
+    X_OK(check_fsinfo(f, &last_used_after, &free_after))
     
-    // check new free space
-    X_OK(ffat_op(f, F_FREE, date_time))
-    uint32_t free2 = *(uint32_t *) f->buffer;
-    ASSERT(free2 == free1 - 1)
-    
-    // check new next free cluster
-    if (scenario != scenario_fat16) {
-        f->F_RAWSEC = f->F_ABS + 1;  // FSInfo sector
-        X_OK(ffat_op(f, F_READ_RAW, date_time))
-        uint32_t nxt_free_2 = *(uint32_t *) &f->buffer[492];
-    
-        ASSERT(nxt_free_2 > nxt_free_1)
-    }
+    ASSERT(free_after == free_before - 1)
+    if (scenario != scenario_fat16)
+        ASSERT(last_used_after > last_used_before)
     
     return true;
 }
@@ -271,13 +252,13 @@ static bool test_f_seek_fw_one(FFat* f, Scenario scenario)
     f->F_CLSTR = file_cluster;
     f->F_SCTR = 0;
     f->F_PARM = 1;
-    X_OK(ffat_op(f, F_SEEK_FW, date_time))
+    X_OK(ffat_op(f, F_SEEK_FW))
     
     if (scenario != scenario_fat32_spc1) {
         ASSERT(f->F_CLSTR == file_cluster);
         ASSERT(f->F_SCTR == 1);
         while (f->F_CLSTR == file_cluster)
-            X_OK(ffat_op(f, F_SEEK_FW, date_time))
+            X_OK(ffat_op(f, F_SEEK_FW))
         ASSERT(f->F_CLSTR == file_cluster + 1);  // here we're also guessing that FatFS used sector 4 after sector 3
         ASSERT(f->F_SCTR == 0);
     } else {
@@ -297,7 +278,7 @@ static bool test_f_seek_fw_end(FFat* f, __attribute__((unused)) Scenario scenari
     f->F_CLSTR = file_cluster;
     f->F_SCTR = 0;
     f->F_PARM = (uint32_t) -1;
-    FFatResult r = ffat_op(f, F_SEEK_FW, date_time);
+    FFatResult r = ffat_op(f, F_SEEK_FW);
     
     ASSERT(r == F_SEEK_PAST_EOF)
     ASSERT(f->F_CLSTR == last_cluster)
@@ -307,14 +288,14 @@ static bool test_f_seek_fw_end(FFat* f, __attribute__((unused)) Scenario scenari
 
 static bool test_append_new_file(FFat* f, Scenario __attribute__((unused)) scenario)
 {
-    X_OK(ffat_op(f, F_CREATE, date_time))
+    X_OK(ffat_op(f, F_CREATE))
     uint32_t last_cluster = f->F_CLSTR;
     uint16_t last_sector = f->F_SCTR;
     
     ASSERT(last_cluster > 2 && last_cluster < 100)
     
     while (true) {
-        X_OK(ffat_op(f, F_APPEND, date_time))
+        X_OK(ffat_op(f, F_APPEND))
         if (f->F_CLSTR == last_cluster) {
             ASSERT(f->F_SCTR > last_sector)
             last_sector = f->F_SCTR;

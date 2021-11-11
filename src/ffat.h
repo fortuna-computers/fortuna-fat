@@ -60,9 +60,7 @@ typedef struct __attribute__((__packed__)) FFat {
     FFatResult F_RSLT : 8;   // result of the last operation
 } FFat;
 
-typedef struct __attribute__((__packed__)) FDateTime {} FDateTime;
-
-FFatResult ffat_op(FFat* f, FFat32Op op, FDateTime date_time);
+FFatResult ffat_op(FFat* f, FFat32Op op);
 
 // please implement these three functions
 bool     raw_write(uint64_t sector, uint8_t const* buffer);
