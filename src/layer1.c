@@ -12,6 +12,7 @@
 
 static inline uint32_t frombuf16(uint8_t const* buffer, uint16_t pos) { return *(uint16_t *) &buffer[pos]; }
 static inline uint32_t frombuf32(uint8_t const* buffer, uint16_t pos) { return *(uint32_t *) &buffer[pos]; }
+static inline void tobuf16(uint8_t* buffer, uint16_t pos, uint16_t value) { *(uint16_t *) &buffer[pos] = value; }
 static inline void tobuf32(uint8_t* buffer, uint16_t pos, uint32_t value) { *(uint32_t *) &buffer[pos] = value; }
 
 // endregion
@@ -146,7 +147,10 @@ static FFatResult fat_update_cluster(FFat* f, uint32_t cluster_number, uint32_t 
         // load and update sector
         f->F_RAWSEC = f->F_ABS + f->F_FATST + sector;
         TRY(f_raw_read(f))
-        tobuf32(f->buffer, entry_ptr, data);
+        if (f->F_TYPE == FAT16)
+            tobuf16(f->buffer, entry_ptr, data);
+        else
+            tobuf32(f->buffer, entry_ptr, data);
         TRY(f_raw_write(f))
     }
     
@@ -295,22 +299,22 @@ FFatResult f_create(FFat* f)
         FFsInfo fs_info;
         TRY(load_fsinfo(f, &fs_info))
     
-        // create cluster in all FATs
-        uint32_t cluster;
-        TRY(fat_find_next_free_cluster(f, fs_info.last_cluster_allocated, &cluster))
-        TRY(fat_update_cluster(f, cluster, FAT32_EOC))
-        f->F_CLSTR = cluster;
+        // create next_free_cluster in all FATs
+        uint32_t next_free_cluster;
+        TRY(fat_find_next_free_cluster(f, fs_info.last_cluster_allocated, &next_free_cluster))
+        TRY(fat_update_cluster(f, next_free_cluster, FAT32_EOC))
+        f->F_CLSTR = next_free_cluster;
         
         // update FSINFO
-        fs_info.last_cluster_allocated = cluster;
+        fs_info.last_cluster_allocated = next_free_cluster;
         --fs_info.free_clusters;
         TRY(write_fsinfo(f, &fs_info))
         
     } else {
-        uint32_t next_free;
-        TRY(fat_find_next_free_cluster(f, 0, &next_free))
-        TRY(fat_update_cluster(f, next_free, FAT16_EOC))
-        f->F_CLSTR = next_free;
+        uint32_t next_free_cluster;
+        TRY(fat_find_next_free_cluster(f, 0, &next_free_cluster))
+        TRY(fat_update_cluster(f, next_free_cluster, FAT16_EOC))
+        f->F_CLSTR = next_free_cluster;
     }
     
     f->F_SCTR = 0;
@@ -346,14 +350,42 @@ FFatResult f_seek_fw(FFat* f)
 
 FFatResult f_append(FFat* f)
 {
-    // load FSINFO
+    if (f->F_SCTR < (f->F_SPC - 1)) {  // if we're not on the last sector of the cluster, we simply append a new sector
+        ++f->F_SCTR;
+        return F_OK;
+    }
     
-    // create new cluster as EOF
+    uint32_t previous_cluster = f->F_CLSTR;
     
-    // redirect previous cluster to new cluster
+    // find current space used and next free cluster
+    if (f->F_TYPE == FAT32) {
+        FFsInfo fs_info;
+        TRY(load_fsinfo(f, &fs_info))
+        
+        // create next_free_cluster in all FATs
+        uint32_t next_free_cluster;
+        TRY(fat_find_next_free_cluster(f, fs_info.last_cluster_allocated, &next_free_cluster))
+        TRY(fat_update_cluster(f, next_free_cluster, FAT32_EOC))
     
-    // update FSINFO
+        // redirect previous cluster to new cluster
+        TRY(fat_update_cluster(f, previous_cluster, next_free_cluster))
+        
+        // update FSINFO
+        fs_info.last_cluster_allocated = next_free_cluster;
+        --fs_info.free_clusters;
+        TRY(write_fsinfo(f, &fs_info))
     
+        f->F_CLSTR = next_free_cluster;
+        
+    } else {
+        uint32_t next_free_cluster;
+        TRY(fat_find_next_free_cluster(f, 0, &next_free_cluster))
+        TRY(fat_update_cluster(f, next_free_cluster, FAT16_EOC))
+        TRY(fat_update_cluster(f, previous_cluster, next_free_cluster))
+        f->F_CLSTR = next_free_cluster;
+    }
+    
+    f->F_SCTR = 0;
     return F_OK;
 }
 
