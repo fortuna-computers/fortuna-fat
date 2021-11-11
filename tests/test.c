@@ -8,11 +8,10 @@
 #include "scenario.h"
 #include "ff/ff.h"
 
-FDateTime date_time = {};
-FFatResult last_result;
+static FDateTime date_time = {};
+static FFatResult last_result;
 
-extern uint8_t _binary_tests_TAGS_TXT_start[];
-extern uint8_t _binary_tests_TAGS_TXT_end[];
+// region -> Helper functions
 
 #define R(expr) { FRESULT r = (expr); if (r != FR_OK) { fprintf(stderr, "FSFAT error: %d\n", r); exit(EXIT_FAILURE); } }
 #define X_OK(expr) { last_result = (expr); if (last_result != F_OK) return false; }
@@ -45,6 +44,9 @@ done:
 
 static uint32_t add_tags_txt(uint32_t* last_cluster)
 {
+    extern uint8_t _binary_tests_TAGS_TXT_start[];
+    extern uint8_t _binary_tests_TAGS_TXT_end[];
+    
     FIL fp;
     UINT bw;
     FATFS* fatfs = calloc(1, sizeof(FATFS));
@@ -61,6 +63,10 @@ static uint32_t add_tags_txt(uint32_t* last_cluster)
     
     return file_cluster;
 }
+
+// endregion
+
+// region -> Layer 0
 
 static bool test_raw_sector(FFat* f, Scenario scenario)
 {
@@ -104,6 +110,10 @@ static bool test_raw_sector_io_error(FFat* f, Scenario scenario)
     emulate_io_error = false;
     return ok;
 }
+
+// endregion
+
+// region -> Layer 1
 
 #if LAYER_IMPLEMENTED >= 1
 
@@ -295,13 +305,34 @@ static bool test_f_seek_fw_end(FFat* f, __attribute__((unused)) Scenario scenari
     return true;
 }
 
-/*
 static bool test_append_new_file(FFat* f, Scenario __attribute__((unused)) scenario)
 {
+    X_OK(ffat_op(f, F_CREATE, date_time))
+    uint32_t last_cluster = f->F_CLSTR;
+    uint16_t last_sector = f->F_SCTR;
+    
+    ASSERT(last_cluster > 2 && last_cluster < 100)
+    
+    while (true) {
+        X_OK(ffat_op(f, F_APPEND, date_time))
+        if (f->F_CLSTR == last_cluster) {
+            ASSERT(f->F_SCTR > last_sector)
+            last_sector = f->F_SCTR;
+        } else {
+            ASSERT(f->F_CLSTR > last_cluster)
+            ASSERT(f->F_SCTR == 0)
+            break;
+        }
+    }
+    
+    return true;
 }
- */
 
 #endif  // LAYER_IMPLEMENT >= 1
+
+// endregion
+
+// region -> Scenarios and tests
 
 static const Scenario layer0_scenarios[] = { scenario_raw_sectors, NULL };
 #if LAYER_IMPLEMENTED >= 1
@@ -325,7 +356,7 @@ static const Test test_list_[] = {
         { "F_BOOT", layer1_scenarios, test_f_boot },
         { "F_FREE", layer1_scenarios, test_f_free },
         { "F_FSI_CALC (free space)", layer1_scenarios, test_f_fsi_calc },
-        { "F_FSI_CALC (next free cluster)", layer1_scenarios, test_f_fsi_calc_nxt_free },
+        { "F_FSI_CALC (next free last_cluster)", layer1_scenarios, test_f_fsi_calc_nxt_free },
         { "F_CREATE", layer1_scenarios, test_f_create },
         { "F_SEEK_FW (one sector)", layer1_scenarios, test_f_seek_fw_one },
         { "F_SEEK_FW (last sector)", layer1_scenarios, test_f_seek_fw_end },
@@ -334,3 +365,5 @@ static const Test test_list_[] = {
 };
 
 const Test* test_list = test_list_;
+
+// endregion

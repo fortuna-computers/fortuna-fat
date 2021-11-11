@@ -1,4 +1,4 @@
-# fortuna-fat32
+# fortuna-fat
 
 [![Automated tests](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/automated-tests.yml/badge.svg?branch=master)](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/automated-tests.yml)
 [![Code size](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/code-size.yml/badge.svg?branch=master)](https://github.com/fortuna-computers/fortuna-fat/actions/workflows/code-size.yml)
