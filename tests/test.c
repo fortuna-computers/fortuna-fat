@@ -215,7 +215,7 @@ static bool test_f_fsi_calc_nxt_free(FFat* f, UNUSED Scenario scenario)
     return true;
 }
 
-static bool test_f_seek_one(FFat* f, Scenario scenario)
+static bool test_f_seek_one(FFat* f, UNUSED Scenario scenario)
 {
     uint32_t file_cluster = add_tags_txt(NULL);
     
