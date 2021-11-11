@@ -19,5 +19,5 @@
 - [X] F_APPEND
 - [X] F_TRUNCATE
 - [X] F_REMOVE
-- [ ] F_READ
-- [ ] F_WRITE
+- [X] F_READ
+- [X] F_WRITE
