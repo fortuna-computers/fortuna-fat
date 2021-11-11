@@ -314,7 +314,20 @@ static bool test_f_append_to_existing_file(FFat* f, UNUSED Scenario scenario)
     uint32_t last_cluster;
     uint32_t file_cluster = add_tags_txt(&last_cluster);
     
+    // append one cluster
     f->F_CLSTR = file_cluster;
+    X_OK(ffat_op(f, F_APPEND))
+    ASSERT(f->F_CLSTR > last_cluster)
+    
+    // check FAT
+    X_OK(ffat_op(f, F_READ_RAW))
+    if (scenario == scenario_fat16) {
+        ASSERT(*(uint16_t *) &f->buffer[last_cluster * 2] == f->F_CLSTR)
+        ASSERT(*(uint16_t *) &f->buffer[f->F_CLSTR * 2] >= 0xfff8)
+    } else {
+        ASSERT((*(uint32_t *) &f->buffer[last_cluster * 4] & 0x0fffffff) == f->F_CLSTR)
+        ASSERT((*(uint32_t *) &f->buffer[f->F_CLSTR * 4] & 0x0fffffff) >= 0x0ffffff8)
+    }
     
     return true;
 }

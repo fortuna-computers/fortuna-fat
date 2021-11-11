@@ -313,6 +313,12 @@ FFatResult f_seek(FFat* f)
 
 FFatResult f_append(FFat* f)
 {
+    // goto to last cluster
+    if (f->F_CLSTR != 0) {
+        f->F_PARM = (uint32_t) -1;
+        f_seek(f);
+    }
+    
     uint32_t previous_cluster = f->F_CLSTR;
     
     // find current space used and next free cluster
