@@ -19,8 +19,9 @@ typedef enum FFat32Op {
     F_SEEK       = 0x14,
     F_APPEND     = 0x15,
     F_TRUNCATE   = 0x16,
-    F_READ       = 0x17,
-    F_WRITE      = 0x18,
+    F_REMOVE     = 0x17,
+    F_READ       = 0x18,
+    F_WRITE      = 0x19,
 #endif
 } FFat32Op;
 

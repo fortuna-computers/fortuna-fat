@@ -157,7 +157,7 @@ static FFatResult fat_update_cluster(FFat* f, uint32_t cluster_number, uint32_t 
     return F_OK;
 }
 
-static FFatResult fat_load_cluster(FFat* f, uint32_t cluster_number, uint32_t* data)
+static FFatResult fat_get_cluster(FFat* f, uint32_t cluster_number, uint32_t* data)
 {
     if (cluster_number > f->F_FATSZ)
         return F_INVALID_FAT_CLUSTER;
@@ -300,7 +300,7 @@ FFatResult f_seek(FFat* f)
     uint32_t next_cluster = f->F_CLSTR;
     
     for (uint32_t i = 0; i < f->F_PARM; ++i) {
-        TRY(fat_load_cluster(f, f->F_CLSTR, &next_cluster))   // TODO - don't load FAT from disk every time
+        TRY(fat_get_cluster(f, f->F_CLSTR, &next_cluster))   // TODO - don't load FAT from disk every time
         if (next_cluster >= ((f->F_TYPE == FAT16) ? FAT16_EOF : FAT32_EOF)) {
             return F_SEEK_PAST_EOF;
         } else {
@@ -356,6 +356,16 @@ FFatResult f_append(FFat* f)
 
 FFatResult f_truncate_(FFat* f)
 {
+    uint32_t current_cluster = f->F_CLSTR;
+    uint32_t next_cluster;
+    
+    bool first = true;
+    do {
+        TRY(fat_get_cluster(f, current_cluster, &next_cluster))
+        TRY(fat_update_cluster(f, current_cluster, first ? (f->F_TYPE == FAT16 ? FAT16_EOF : FAT32_EOF) : FAT_CLUSTER_FREE))
+        current_cluster = next_cluster;
+        first = false;
+    } while (current_cluster < (f->F_TYPE == FAT16 ? FAT16_EOF : FAT32_EOF));
     
     return F_OK;
 }

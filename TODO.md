@@ -17,6 +17,6 @@
 - [X] F_CREATE
 - [X] F_SEEK
 - [X] F_APPEND
-- [ ] F_TRUNCATE
+- [X] F_TRUNCATE
 - [ ] F_READ
 - [ ] F_WRITE
