@@ -12,11 +12,12 @@ static FFatResult last_result;
 
 // region -> Helper functions
 
+#define UNUSED __attribute__((unused))
 #define R(expr) { FRESULT r = (expr); if (r != FR_OK) { fprintf(stderr, "FSFAT error: %d\n", r); exit(EXIT_FAILURE); } }
 #define X_OK(expr) { last_result = (expr); if (last_result != F_OK) return false; }
 #define ASSERT(expr) { if (!(expr)) return false; }
 
-static __attribute__((unused)) void print_fat(FFat* f)
+static UNUSED void print_fat(FFat* f)
 {
     const uint64_t sector = f->F_ABS + f->F_FATST;
     for (size_t i = 0; i < f->F_FATSZ; ++i) {
@@ -150,7 +151,7 @@ static bool test_f_init(FFat* f, Scenario scenario)
     return true;
 }
 
-static bool test_f_boot(FFat* f, __attribute__((unused)) Scenario scenario)
+static bool test_f_boot(FFat* f, UNUSED Scenario scenario)
 {
     X_OK(ffat_op(f, F_BOOT))
     
@@ -180,7 +181,7 @@ static bool test_f_free(FFat* f, Scenario scenario)
     return true;
 }
 
-static bool test_f_fsi_calc(FFat* f, __attribute__((unused)) Scenario scenario)
+static bool test_f_fsi_calc(FFat* f, UNUSED Scenario scenario)
 {
     X_OK(ffat_op(f, F_FREE))
     uint32_t free1 = *(uint32_t *) f->buffer;
@@ -194,7 +195,7 @@ static bool test_f_fsi_calc(FFat* f, __attribute__((unused)) Scenario scenario)
     return true;
 }
 
-static bool test_f_fsi_calc_nxt_free(FFat* f, __attribute__((unused)) Scenario scenario)
+static bool test_f_fsi_calc_nxt_free(FFat* f, UNUSED Scenario scenario)
 {
     // check next free cluster before recalculation
     f->F_RAWSEC = f->F_ABS + 1;  // FSInfo sector
@@ -214,7 +215,49 @@ static bool test_f_fsi_calc_nxt_free(FFat* f, __attribute__((unused)) Scenario s
     return true;
 }
 
-static bool test_f_create(FFat* f, Scenario scenario)
+static bool test_f_seek_one(FFat* f, Scenario scenario)
+{
+    uint32_t file_cluster = add_tags_txt(NULL);
+    
+    // here we're guessing that the cluster for this file is 4
+    f->F_CLSTR = file_cluster;
+    f->F_SCTR = 0;
+    f->F_PARM = 1;
+    X_OK(ffat_op(f, F_SEEK))
+    
+    if (scenario != scenario_fat32_spc1) {
+        ASSERT(f->F_CLSTR == file_cluster);
+        ASSERT(f->F_SCTR == 1);
+        while (f->F_CLSTR == file_cluster)
+            X_OK(ffat_op(f, F_SEEK))
+        ASSERT(f->F_CLSTR == file_cluster + 1);  // here we're also guessing that FatFS used sector 4 after sector 3
+        ASSERT(f->F_SCTR == 0);
+    } else {
+        ASSERT(f->F_CLSTR == file_cluster + 1);
+        ASSERT(f->F_SCTR == 0);
+    }
+    
+    return true;
+}
+
+static bool test_f_seek_end(FFat* f, UNUSED Scenario scenario)
+{
+    uint32_t last_cluster;
+    uint32_t file_cluster = add_tags_txt(&last_cluster);
+    
+    f->F_CLSTR = file_cluster;
+    f->F_SCTR = 0;
+    f->F_PARM = (uint32_t) -1;
+    FFatResult r = ffat_op(f, F_SEEK);
+    
+    ASSERT(r == F_SEEK_PAST_EOF)
+    ASSERT(f->F_CLSTR == last_cluster)
+    ASSERT(f->F_SCTR == f->F_SPC - 1)
+    
+    return true;
+}
+
+static bool test_f_append_create_file(FFat* f, Scenario scenario)
 {
     // get FSInfo before creation
     uint32_t last_used_before, free_before;
@@ -245,49 +288,7 @@ static bool test_f_create(FFat* f, Scenario scenario)
     return true;
 }
 
-static bool test_f_seek_one(FFat* f, Scenario scenario)
-{
-    uint32_t file_cluster = add_tags_txt(NULL);
-    
-    // here we're guessing that the cluster for this file is 4
-    f->F_CLSTR = file_cluster;
-    f->F_SCTR = 0;
-    f->F_PARM = 1;
-    X_OK(ffat_op(f, F_SEEK))
-    
-    if (scenario != scenario_fat32_spc1) {
-        ASSERT(f->F_CLSTR == file_cluster);
-        ASSERT(f->F_SCTR == 1);
-        while (f->F_CLSTR == file_cluster)
-            X_OK(ffat_op(f, F_SEEK))
-        ASSERT(f->F_CLSTR == file_cluster + 1);  // here we're also guessing that FatFS used sector 4 after sector 3
-        ASSERT(f->F_SCTR == 0);
-    } else {
-        ASSERT(f->F_CLSTR == file_cluster + 1);
-        ASSERT(f->F_SCTR == 0);
-    }
-    
-    return true;
-}
-
-static bool test_f_seek_end(FFat* f, __attribute__((unused)) Scenario scenario)
-{
-    uint32_t last_cluster;
-    uint32_t file_cluster = add_tags_txt(&last_cluster);
-    
-    // here we're guessing that the cluster for this file is 4
-    f->F_CLSTR = file_cluster;
-    f->F_SCTR = 0;
-    f->F_PARM = (uint32_t) -1;
-    FFatResult r = ffat_op(f, F_SEEK);
-    
-    ASSERT(r == F_SEEK_PAST_EOF)
-    ASSERT(f->F_CLSTR == last_cluster)
-    
-    return true;
-}
-
-static bool test_f_append_new_file(FFat* f, Scenario __attribute__((unused)) scenario)
+static bool test_f_append_one_to_new_file(FFat* f, Scenario UNUSED scenario)
 {
     // get FSInfo before creation
     uint32_t free_before;
@@ -333,6 +334,17 @@ static bool test_f_append_new_file(FFat* f, Scenario __attribute__((unused)) sce
     return true;
 }
 
+static bool test_f_append_to_existing_file(FFat* f, UNUSED Scenario scenario)
+{
+    uint32_t last_cluster;
+    uint32_t file_cluster = add_tags_txt(&last_cluster);
+    
+    f->F_CLSTR = file_cluster;
+    f->F_SCTR = 0;
+    
+    return true;
+}
+
 #endif  // LAYER_IMPLEMENT >= 1
 
 // endregion
@@ -362,10 +374,11 @@ static const Test test_list_[] = {
         { "F_FREE", layer1_scenarios, test_f_free },
         { "F_FSI_CALC (free space)", layer1_scenarios, test_f_fsi_calc },
         { "F_FSI_CALC (next free last_cluster)", layer1_scenarios, test_f_fsi_calc_nxt_free },
-        { "F_APPEND (create file)", layer1_scenarios, test_f_create },
-        { "F_APPEND (append one to new file)", layer1_scenarios, test_f_append_new_file },
         { "F_SEEK (one sector)", layer1_scenarios, test_f_seek_one },
         { "F_SEEK (last sector)", layer1_scenarios, test_f_seek_end },
+        { "F_APPEND (create file)", layer1_scenarios, test_f_append_create_file },
+        { "F_APPEND (append one to new file)", layer1_scenarios, test_f_append_one_to_new_file },
+        { "F_APPEND (append to existing file)", layer1_scenarios, test_f_append_to_existing_file },
 #endif
         { NULL, NULL, NULL },
 };
