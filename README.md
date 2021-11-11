@@ -84,18 +84,18 @@ These registers are usually not required, but can provide additional information
 
 ### Supported operations
 
-| Operation    | Description | Additional information |
-|--------------|-------------|-------|
-| `F_INIT`     | Reads a partition boot sector and initialize the partition. When changing partitions, new `F_INIT` must be issued. | `F_PARM`: partition number |
-| `F_BOOT`     | Load boot sector into buffer. |
-| `F_FREE`     | Returns number of free clusters into first 4 bytes of buffer. |
-| `F_FSI_CALC` | Recalculate FSINFO values (free clusters and next free cluster). |
-| `F_SEEK`     | Advance `F_CLSTR` a number of clusters. | `F_PARM`: number of clusters to move forward. Use `0xFFFFFFFF` to go to EOF. |
-| `F_APPEND`   | Advance `F_CLSTR` until the cluster that marks the end of file, and append a new cluster. If `F_CLSTR == 0`, it'll create a new file. |
-| `F_TRUNCATE` | Limit the file size to the one specified in `F_CLSTR`, clearing all following FAT entries. |
-| `F_REMOVE`   | Remove a file from FAT. `F_CLSTR` should be pointing to the initial file cluster. |
-| `F_READ`     | Read a sector in a data cluster, based on `F_CLSTR` and `F_SCTR`. |
-| `F_WRITE`    | Write a sector in a data cluster, based on `F_CLSTR` and `F_SCTR`. |
+| Operation      | Description | Additional information |
+|----------------|-------------|-------|
+| `F_INIT`       | Reads a partition boot sector and initialize the partition. When changing partitions, new `F_INIT` must be issued. | `F_PARM`: partition number |
+| `F_BOOT`       | Load boot sector into buffer. |
+| `F_FREE`       | Returns number of free clusters into first 4 bytes of buffer. |
+| `F_FSI_CALC`   | Recalculate FSINFO values (free clusters and next free cluster). |
+| `F_SEEK`       | Advance `F_CLSTR` a number of clusters. | `F_PARM`: number of clusters to move forward. Use `0xFFFFFFFF` to go to EOF. |
+| `F_APPEND`     | Advance `F_CLSTR` until the cluster that marks the end of file, and append a new cluster. If `F_CLSTR == 0`, it'll create a new file. |
+| `F_TRUNCATE`   | Limit the file size to the one specified in `F_CLSTR`, clearing all following FAT entries. |
+| `F_REMOVE`     | Remove a file from FAT. `F_CLSTR` should be pointing to the initial file cluster. |
+| `F_READ_DATA`  | Read a sector in a data cluster, based on `F_CLSTR` and `F_SCTR`. |
+| `F_WRITE_DATA` | Write a sector in a data cluster, based on `F_CLSTR` and `F_SCTR`. |
 
 ## Possible responses (`F_RSLT`)
 

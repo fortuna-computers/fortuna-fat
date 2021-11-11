@@ -72,8 +72,8 @@ static FFatResult parse_bpb_and_set_fat_type(FFat* f)
     uint32_t tot_sec = tot_sec_16 ? tot_sec_16 : tot_sec_32;
     f->F_FATSZ = fat_sz_16 ? fat_sz_16 : fat_sz_32;
     
-    f->F_DATA = tot_sec - (f->F_FATST + (f->F_NFATS * f->F_FATSZ) + root_dir_sectors);
-    uint32_t count_of_clusters = f->F_DATA / f->F_SPC;
+    f->F_DATA = (f->F_FATST + (f->F_NFATS * f->F_FATSZ) + root_dir_sectors);
+    uint32_t count_of_clusters = (tot_sec - f->F_DATA) / f->F_SPC;
     
     if (count_of_clusters < 4085)
         return F_UNSUPPORTED_FS;
@@ -376,5 +376,20 @@ FFatResult f_remove(FFat* f)
     TRY(fat_update_cluster(f, f->F_CLSTR, FAT_CLUSTER_FREE))
     return F_OK;
 }
+
+FFatResult f_read_data(FFat* f)
+{
+    f->F_RAWSEC = f->F_ABS + f->F_DATA + ((f->F_CLSTR - 2) * f->F_SPC) + f->F_SCTR;
+    TRY(f_raw_read(f))
+    return F_OK;
+}
+
+FFatResult f_write_data(FFat* f)
+{
+    f->F_RAWSEC = f->F_ABS + f->F_DATA + ((f->F_CLSTR - 2) * f->F_SPC) + f->F_SCTR;
+    TRY(f_raw_write(f))
+    return F_OK;
+}
+
 
 // endregion

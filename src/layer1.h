@@ -14,4 +14,7 @@ FFatResult f_append(FFat* f);
 FFatResult f_truncate_(FFat* f);
 FFatResult f_remove(FFat* f);
 
+FFatResult f_read_data(FFat* f);
+FFatResult f_write_data(FFat* f);
+
 #endif

@@ -402,6 +402,28 @@ static bool test_f_remove(FFat* f, UNUSED Scenario scenario)
     return true;
 }
 
+static bool test_f_read_write(FFat* f, UNUSED Scenario scenario)
+{
+    extern uint8_t _binary_tests_TAGS_TXT_start[];
+    
+    uint32_t file_cluster = add_tags_txt(NULL);
+    
+    f->F_CLSTR = file_cluster;
+    f->F_SCTR = 1;
+    X_OK(ffat_op(f, F_READ_DATA))
+    ASSERT(memcmp(f->buffer, &_binary_tests_TAGS_TXT_start[512], 512) == 0)
+    
+    f->buffer[50] = 'X';
+    X_OK(ffat_op(f, F_WRITE_DATA))
+    
+    memset(f->buffer, 0, 512);
+    
+    X_OK(ffat_op(f, F_READ_DATA))
+    ASSERT(f->buffer[50] == 'X')
+    
+    return true;
+}
+
 #endif  // LAYER_IMPLEMENT >= 1
 
 // endregion
@@ -439,6 +461,7 @@ static const Test test_list_[] = {
         { "F_TRUNCATE (first sector)", layer1_scenarios, test_f_truncate_first_sector },
         { "F_TRUNCATE (3rd sector)", layer1_scenarios, test_f_truncate_3rd_sector },
         { "F_REMOVE", layer1_scenarios, test_f_remove },
+        { "F_READ_DATA / F_WRITE_DATA", layer1_scenarios, test_f_read_write },
 #endif
         { NULL, NULL, NULL },
 };
