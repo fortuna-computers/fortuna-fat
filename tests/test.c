@@ -286,25 +286,47 @@ static bool test_f_seek_fw_end(FFat* f, __attribute__((unused)) Scenario scenari
     return true;
 }
 
-static bool test_append_new_file(FFat* f, Scenario __attribute__((unused)) scenario)
+static bool test_f_append_new_file(FFat* f, Scenario __attribute__((unused)) scenario)
 {
+    // get FSInfo before creation
+    uint32_t free_before;
+    X_OK(check_fsinfo(f, NULL, &free_before))
+    
+    // create a new file
     X_OK(ffat_op(f, F_CREATE))
-    uint32_t last_cluster = f->F_CLSTR;
+    uint32_t file_cluster = f->F_CLSTR;
     uint16_t last_sector = f->F_SCTR;
     
-    ASSERT(last_cluster > 2 && last_cluster < 100)
+    ASSERT(file_cluster > 1 && file_cluster < 100)
     
+    // append clusters
     while (true) {
         X_OK(ffat_op(f, F_APPEND))
-        if (f->F_CLSTR == last_cluster) {
+        if (f->F_CLSTR == file_cluster) {
             ASSERT(f->F_SCTR > last_sector)
             last_sector = f->F_SCTR;
         } else {
-            ASSERT(f->F_CLSTR > last_cluster)
+            ASSERT(f->F_CLSTR > file_cluster)
             ASSERT(f->F_SCTR == 0)
             break;
         }
     }
+    
+    // check FAT
+    X_OK(ffat_op(f, F_READ_RAW))
+    if (scenario == scenario_fat16) {
+        ASSERT(*(uint16_t *) &f->buffer[file_cluster * 2] == f->F_CLSTR)
+        ASSERT(*(uint16_t *) &f->buffer[f->F_CLSTR * 2] >= 0xfff8)
+    } else {
+        ASSERT((*(uint32_t *) &f->buffer[file_cluster * 4] & 0x0fffffff) == f->F_CLSTR)
+        ASSERT((*(uint32_t *) &f->buffer[f->F_CLSTR * 4] & 0x0fffffff) >= 0x0ffffff8)
+    }
+    
+    // get FSInfo after creation & append
+    uint32_t free_after;
+    X_OK(check_fsinfo(f, NULL, &free_after))
+    
+    ASSERT(free_after == free_before - 2)
     
     return true;
 }
@@ -341,6 +363,7 @@ static const Test test_list_[] = {
         { "F_CREATE", layer1_scenarios, test_f_create },
         { "F_SEEK_FW (one sector)", layer1_scenarios, test_f_seek_fw_one },
         { "F_SEEK_FW (last sector)", layer1_scenarios, test_f_seek_fw_end },
+        { "F_APPEND (new file)", layer1_scenarios, test_f_append_new_file },
 #endif
         { NULL, NULL, NULL },
 };
