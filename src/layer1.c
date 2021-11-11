@@ -354,4 +354,10 @@ FFatResult f_append(FFat* f)
     return F_OK;
 }
 
+FFatResult f_truncate_(FFat* f)
+{
+    
+    return F_OK;
+}
+
 // endregion
