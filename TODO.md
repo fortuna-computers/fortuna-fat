@@ -16,7 +16,7 @@
 - [X] F_FSI_CALC
 - [X] F_CREATE
 - [X] F_SEEK
-- [ ] F_APPEND
+- [X] F_APPEND
 - [ ] F_TRUNCATE
 - [ ] F_READ
 - [ ] F_WRITE
