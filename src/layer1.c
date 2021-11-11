@@ -299,6 +299,7 @@ FFatResult f_create(FFat* f)
         uint32_t cluster;
         TRY(fat_find_next_free_cluster(f, fs_info.last_cluster_allocated, &cluster))
         TRY(fat_update_cluster(f, cluster, FAT32_EOC))
+        f->F_CLSTR = cluster;
         
         // update FSINFO
         fs_info.last_cluster_allocated = cluster;
@@ -309,8 +310,10 @@ FFatResult f_create(FFat* f)
         uint32_t next_free;
         TRY(fat_find_next_free_cluster(f, 0, &next_free))
         TRY(fat_update_cluster(f, next_free, FAT16_EOC))
+        f->F_CLSTR = next_free;
     }
     
+    f->F_SCTR = 0;
     return F_OK;
 }
 

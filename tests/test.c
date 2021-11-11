@@ -226,6 +226,9 @@ static bool test_f_create(FFat* f, Scenario scenario)
     // create new FAT entry
     X_OK(ffat_op(f, F_CREATE, date_time))
     
+    ASSERT(f->F_CLSTR == expected_cluster)
+    ASSERT(f->F_SCTR == 0)
+    
     // check if FAT entry was created
     X_OK(ffat_op(f, F_READ_RAW, date_time))
     if (scenario == scenario_fat16)
@@ -275,7 +278,7 @@ static bool test_f_seek_fw_one(FFat* f, Scenario scenario)
     return true;
 }
 
-static bool test_f_seek_fw_end(FFat* f, Scenario scenario)
+static bool test_f_seek_fw_end(FFat* f, __attribute__((unused)) Scenario scenario)
 {
     uint32_t last_cluster;
     uint32_t file_cluster = add_tags_txt(&last_cluster);
@@ -291,6 +294,12 @@ static bool test_f_seek_fw_end(FFat* f, Scenario scenario)
     
     return true;
 }
+
+/*
+static bool test_append_new_file(FFat* f, Scenario __attribute__((unused)) scenario)
+{
+}
+ */
 
 #endif  // LAYER_IMPLEMENT >= 1
 
