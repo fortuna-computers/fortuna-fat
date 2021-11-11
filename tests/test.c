@@ -287,10 +287,8 @@ static bool test_f_append_one_to_new_file(FFat* f, Scenario UNUSED scenario)
     ASSERT(file_cluster > 1 && file_cluster < 100)
     
     // append clusters
-    while (true) {
-        X_OK(ffat_op(f, F_APPEND))
-        ASSERT(f->F_CLSTR > file_cluster)
-    }
+    X_OK(ffat_op(f, F_APPEND))
+    ASSERT(f->F_CLSTR > file_cluster)
     
     // check FAT
     X_OK(ffat_op(f, F_READ_RAW))
