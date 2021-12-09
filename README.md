@@ -113,11 +113,70 @@ These registers are usually not required, but can provide additional information
 
 ## Layer 2 (files and directories)
 
-Layer 2 is not yet implemented, but will have the following functionalities:
+All requests from layers 0 and 1 and also available in layer 2.
 
-* Navigate between directories
-* Create/delete files
-* Read/write files
-* Create/delete directories
-* Stat files and directories
-* Move and rename files and directories
+Layer 2 provide user interface to files and directories.
+
+## Registers
+
+These registers can be used to pass parameters and receive values from requests:
+
+| Name | Description | Size |
+|------|-------------|------|
+| `F_ADDR` | Destination/origin address in memory | 16-bit |
+| `F_LEN`  | Number of bytes to read/write | 16-bit |
+
+These registers are usually not required, but can provide additional information to the user:
+
+| Name | Description | Size |
+|------|-------------|------|
+| `F_DIR`...  | Data structure pointing to current directory | File pointer: 160-bits* |
+| `F_FILE`... | Data structure pointing to currently open file | File pointer: 160-bits* |
+
+The _file pointer_ structure is composed like this:
+
+| Name | Description | Size |
+|------|-------------|------|
+| ...`_PTR_CLSTR`  | File/dir structure pointer in parent (cluster) |
+| ...`_PTR_SCTR`   | File/dir structure pointer in parent (sector) |
+| ...`_PTR_IDX`    | File/dir structure pointer in parent (index) |
+| ...`_DATA_CLSTR` | File/dir data pointer (cluster) |
+| ...`_DATA_SCTR`  | File/dir data pointer (sector) |
+| ...`_DATA_IDX`   | File/dir data pointer (index) |
+
+## Supported operations
+
+Operations on files/directories:
+
+| Operation      | Description | Additional information |
+|----------------|-------------|-------|
+| `F_PATH`       | Set current directory based on a full relative path |
+| `F_MKFILE`     | Create a file in current directory |
+| `F_RMFILE`     | Delete a file in current directory |
+| `F_MKDIR`      | Create a file in current directory |
+| `F_RMDIR`      | Delete a file in current directory |
+| `F_MOVE`       | Move a file or directory |
+| `F_STAT`       | Stat a file or directory |
+
+Operations on directory navigation:
+
+| Operation      | Description | Additional information |
+|----------------|-------------|-------|
+| `F_DIR`        | Prepare for listing a directory | Return first file on buffer |
+| `F_DIR_NXT`    | List next file |
+
+Operations on file contents:
+
+| Operation      | Description | Additional information |
+|----------------|-------------|-------|
+| `F_OPEN_F`     | Open a file |
+| `F_SEEK_F`     | Seek within a file (forward only) |
+| `F_WRITE`      | Write `F_LEN` chars from RAM to file |
+| `F_READ`       | Read `F_LEN` chars from file into RAM |
+| `F_READ_FULL`  | Read the while file into RAM |
+
+## Possible responses
+
+| Code | Response |
+|------|----------|
+| `F_PATH_NOT_FOUND` | The path was not found |
