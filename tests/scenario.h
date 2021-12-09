@@ -3,8 +3,6 @@
 
 #define MAX_SCENARIOS 64
 
-const char* scenario_name;
-
 void scenario_raw_sectors();
 void scenario_fat16();
 void scenario_fat32();
@@ -15,6 +13,7 @@ void scenario_fat32_2_partitions();
 
 typedef void(*Scenario)();
 
-Scenario scenario_list[MAX_SCENARIOS];
+extern const char* scenario_name;
+extern Scenario scenario_list[MAX_SCENARIOS];
 
 #endif //FORTUNA_FAT_SCENARIO_H

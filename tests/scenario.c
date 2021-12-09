@@ -9,6 +9,9 @@
 
 #define MB (1024 * 1024)
 
+const char* scenario_name;
+Scenario scenario_list[MAX_SCENARIOS];
+
 static BYTE work[FF_MAX_SS];
 
 static void R(FRESULT fresult)
