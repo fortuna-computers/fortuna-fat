@@ -10,6 +10,8 @@
 
 static FFatResult last_result;
 
+const Test* test_list;
+
 // region -> Helper functions
 
 #define UNUSED __attribute__((unused))

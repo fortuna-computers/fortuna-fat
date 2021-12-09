@@ -11,6 +11,6 @@ typedef struct Test {
     bool            (*run_test)(FFat*, Scenario scenario);
 } Test;
 
-const Test* test_list;
+extern const Test* test_list;
 
 #endif //FORTUNA_FAT_TEST_H
