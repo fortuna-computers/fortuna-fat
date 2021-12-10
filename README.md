@@ -123,7 +123,6 @@ These registers can be used to pass parameters and receive values from requests:
 
 | Name | Description | Size |
 |------|-------------|------|
-| `F_ADDR` | Destination/origin address in memory | 16-bit |
 | `F_LEN`  | Number of bytes to read/write | 16-bit |
 
 These registers are usually not required, but can provide additional information to the user:
@@ -169,11 +168,12 @@ Operations on file contents:
 
 | Operation      | Description | Additional information |
 |----------------|-------------|-------|
-| `F_OPEN_F`     | Open a file |
-| `F_SEEK_F`     | Seek within a file (forward only) |
-| `F_WRITE`      | Write `F_LEN` chars from RAM to file |
-| `F_READ`       | Read `F_LEN` chars from file into RAM |
-| `F_READ_FULL`  | Read the while file into RAM |
+| `F_OPEN`       | Open a file |
+| `FF_SEEK`      | Seek within a file (forward only) |
+| `FF_OVERWRITE` | Write `F_LEN` chars from RAM to file |
+| `FF_APPEND`    | Append `F_LEN` chars from RAM to file |
+| `FF_READ`      | Read `F_LEN` chars from RAM into file |
+| `FF_TRUNCATE`  | Truncate file |
 
 ## Possible responses
 
