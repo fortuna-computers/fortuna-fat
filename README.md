@@ -130,7 +130,7 @@ These registers are usually not required, but can provide additional information
 
 | Name | Description | Size |
 |------|-------------|------|
-| `F_DIR`...  | Data structure pointing to current directory | File pointer: 160-bits* |
+| `F_CUR_DIR`...  | Data structure pointing to current directory | File pointer: 160-bits* |
 | `F_FILE`... | Data structure pointing to currently open file | File pointer: 160-bits* |
 
 The _file pointer_ structure is composed like this:

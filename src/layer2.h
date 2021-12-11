@@ -3,6 +3,8 @@
 
 #include "ffat.h"
 
+FFatResult f_init_layer2(FFat* f);
+
 FFatResult f_mkdir_(FFat* f);
 
 #endif

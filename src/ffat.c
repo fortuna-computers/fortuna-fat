@@ -14,7 +14,14 @@ FFatResult ffat_op(FFat* f, FFat32Op op)
         case F_READ_RAW:   return f->F_RSLT = f_raw_read(f);
         case F_WRITE_RAW:  return f->F_RSLT = f_raw_write(f);
 #if LAYER_IMPLEMENTED >= 1
-        case F_INIT:       return f->F_RSLT = f_init(f);
+        case F_INIT: {
+           f->F_RSLT = f_init(f);
+#if LAYER_IMPLEMENTED >= 2
+           if (f->F_RSLT == F_OK)
+             f->F_RSLT = f_init_layer2(f);
+#endif
+           return f->F_RSLT;
+        }
         case F_BOOT:       return f->F_RSLT = f_boot(f);
         case F_FREE:       return f->F_RSLT = f_free(f);
         case F_FSI_CALC:   return f->F_RSLT = f_fsi_calc(f);

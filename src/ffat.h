@@ -63,6 +63,10 @@ typedef struct __attribute__((__packed__)) FFat {
     FFatType F_TYPE : 2;      // Filesystem type (FAT16/32)
 #endif
 #if LAYER_IMPLEMENTED >= 2
+    bool     F_EOF : 1;       // additional parameter: is EOF?
+    uint16_t F_LEN;           // additional parameter: length to read/write
+    uint32_t F_CD_CLSTR;      // current dir (cluster)
+    uint16_t F_CD_SCTR;       // current dir (sector)
 #endif
     FFatResult F_RSLT : 8;   // result of the last operation
 } FFat;
