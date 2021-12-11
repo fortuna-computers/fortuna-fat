@@ -124,6 +124,7 @@ These registers can be used to pass parameters and receive values from requests:
 | Name | Description | Size |
 |------|-------------|------|
 | `F_LEN`  | Number of bytes to read/write | 16-bit |
+| `F_EOF`  | If the operation marks en end-of-file, or not | 1 bit |
 
 These registers are usually not required, but can provide additional information to the user:
 

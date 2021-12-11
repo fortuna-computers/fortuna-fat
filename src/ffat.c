@@ -4,6 +4,9 @@
 #if LAYER_IMPLEMENTED >= 1
 #  include "layer1.h"
 #endif
+#if LAYER_IMPLEMENTED >= 2
+#  include "layer2.h"
+#endif
 
 FFatResult ffat_op(FFat* f, FFat32Op op)
 {
@@ -21,6 +24,9 @@ FFatResult ffat_op(FFat* f, FFat32Op op)
         case F_REMOVE:     return f->F_RSLT = f_remove(f);
         case F_READ_DATA:  return f->F_RSLT = f_read_data(f);
         case F_WRITE_DATA: return f->F_RSLT = f_write_data(f);
+#endif
+#if LAYER_IMPLEMENTED >= 2
+        case F_MKDIR:      return f->F_RSLT = f_mkdir_(f);
 #endif
         default:           return f->F_RSLT = F_NOT_IMPLEMENTED;
     }

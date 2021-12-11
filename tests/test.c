@@ -430,6 +430,39 @@ static bool test_f_read_write(FFat* f, UNUSED Scenario scenario)
 
 // endregion
 
+// region -> Layer 2
+
+#if LAYER_IMPLEMENTED >= 2
+
+static bool test_f_mkdir(FFat* f, UNUSED Scenario scenario)
+{
+    sprintf((char *) f->buffer, "1");
+    X_OK(ffat_op(f, F_MKDIR));
+
+    sprintf((char *) f->buffer, "2");
+    X_OK(ffat_op(f, F_MKDIR));
+
+    sprintf((char *) f->buffer, "3");
+    X_OK(ffat_op(f, F_MKDIR));
+
+    FATFS* fatfs = calloc(1, sizeof(FATFS));
+    R(f_mount(fatfs, "", 0));
+
+    DIR dp;
+    R(f_opendir(&dp, "1"));
+    R(f_opendir(&dp, "2"));
+    R(f_opendir(&dp, "3"));
+
+    R(f_mount(NULL, "", 0));
+    free(fatfs);
+
+    return true;
+}
+
+#endif  // LAYER_IMPLEMENT >= 2
+
+// endregion
+
 // region -> Scenarios and tests
 
 static const Scenario layer0_scenarios[] = { scenario_raw_sectors, NULL };
@@ -446,24 +479,27 @@ static const Scenario layer1_scenarios[] = {
 #endif
 
 static const Test test_list_[] = {
-        { "Layer 0 sector access", layer0_scenarios, test_raw_sector },
-        { "Layer 0 sector past end of image", layer0_scenarios, test_raw_sector_past_end_of_image },
-        { "Layer 0 I/O error", layer0_scenarios, test_raw_sector_io_error },
+        { "Layer 0: sector access", layer0_scenarios, test_raw_sector },
+        { "Layer 0: sector past end of image", layer0_scenarios, test_raw_sector_past_end_of_image },
+        { "Layer 0: I/O error", layer0_scenarios, test_raw_sector_io_error },
 #if LAYER_IMPLEMENTED >= 1
-        { "Layer 1 F_INIT", layer1_scenarios, test_f_init },
-        { "Layer 1 F_BOOT", layer1_scenarios, test_f_boot },
-        { "Layer 1 F_FREE", layer1_scenarios, test_f_free },
-        { "Layer 1 F_FSI_CALC (free space)", layer1_scenarios, test_f_fsi_calc },
-        { "Layer 1 F_FSI_CALC (next free last_cluster)", layer1_scenarios, test_f_fsi_calc_nxt_free },
-        { "Layer 1 F_SEEK (one sector)", layer1_scenarios, test_f_seek_one },
-        { "Layer 1 F_SEEK (last sector)", layer1_scenarios, test_f_seek_end },
-        { "Layer 1 F_APPEND (create file)", layer1_scenarios, test_f_append_create_file },
-        { "Layer 1 F_APPEND (append one to new file)", layer1_scenarios, test_f_append_one_to_new_file },
-        { "Layer 1 F_APPEND (append to existing file)", layer1_scenarios, test_f_append_to_existing_file },
-        { "Layer 1 F_TRUNCATE (first sector)", layer1_scenarios, test_f_truncate_first_sector },
-        { "Layer 1 F_TRUNCATE (3rd sector)", layer1_scenarios, test_f_truncate_3rd_sector },
-        { "Layer 1 F_REMOVE", layer1_scenarios, test_f_remove },
-        { "Layer 1 F_READ_DATA / F_WRITE_DATA", layer1_scenarios, test_f_read_write },
+        { "Layer 1: F_INIT", layer1_scenarios, test_f_init },
+        { "Layer 1: F_BOOT", layer1_scenarios, test_f_boot },
+        { "Layer 1: F_FREE", layer1_scenarios, test_f_free },
+        { "Layer 1: F_FSI_CALC (free space)", layer1_scenarios, test_f_fsi_calc },
+        { "Layer 1: F_FSI_CALC (next free last_cluster)", layer1_scenarios, test_f_fsi_calc_nxt_free },
+        { "Layer 1: F_SEEK (one sector)", layer1_scenarios, test_f_seek_one },
+        { "Layer 1: F_SEEK (last sector)", layer1_scenarios, test_f_seek_end },
+        { "Layer 1: F_APPEND (create file)", layer1_scenarios, test_f_append_create_file },
+        { "Layer 1: F_APPEND (append one to new file)", layer1_scenarios, test_f_append_one_to_new_file },
+        { "Layer 1: F_APPEND (append to existing file)", layer1_scenarios, test_f_append_to_existing_file },
+        { "Layer 1: F_TRUNCATE (first sector)", layer1_scenarios, test_f_truncate_first_sector },
+        { "Layer 1: F_TRUNCATE (3rd sector)", layer1_scenarios, test_f_truncate_3rd_sector },
+        { "Layer 1: F_REMOVE", layer1_scenarios, test_f_remove },
+        { "Layer 1: F_READ_DATA / F_WRITE_DATA", layer1_scenarios, test_f_read_write },
+#endif
+#if LAYER_IMPLEMENTED >= 2
+        { "Layer 2: F_MKDIR", layer1_scenarios, test_f_mkdir },
 #endif
         { NULL, NULL, NULL },
 };
