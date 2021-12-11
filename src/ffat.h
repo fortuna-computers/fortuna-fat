@@ -40,6 +40,7 @@ typedef enum FFatResult {
     F_NO_PARTITION          = 0x15,
 #endif
 #if LAYER_IMPLEMENTED >= 2
+    F_INVALID_FILENAME      = 0x20,
 #endif
     F_NOT_IMPLEMENTED       = 0xff,
 } FFatResult;
@@ -66,7 +67,6 @@ typedef struct __attribute__((__packed__)) FFat {
     bool     F_EOF : 1;       // additional parameter: is EOF?
     uint16_t F_LEN;           // additional parameter: length to read/write
     uint32_t F_CD_CLSTR;      // current dir (cluster)
-    uint16_t F_CD_SCTR;       // current dir (sector)
 #endif
     FFatResult F_RSLT : 8;   // result of the last operation
 } FFat;

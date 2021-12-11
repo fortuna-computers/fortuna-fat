@@ -30,6 +30,7 @@ static inline void tobuf32(uint8_t* buffer, uint16_t pos, uint32_t value) { *(ui
 #define BPB_RESVD_SEC_CNT  14
 #define BPB_NUM_FATS       16
 #define BPB_SEC_PER_CLUS   13
+#define BPB_ROOTCLUS       44
 
 static FFatResult set_partition_start(FFat* f, uint8_t partition_number)
 {
@@ -67,7 +68,7 @@ static FFatResult parse_bpb_and_set_fat_type(FFat* f)
     f->F_FATST = frombuf16(f->buffer, BPB_RESVD_SEC_CNT);
     f->F_NFATS = f->buffer[BPB_NUM_FATS];
     f->F_SPC = f->buffer[BPB_SEC_PER_CLUS];
-    
+
     uint32_t root_dir_sectors = ((root_ent_cnt * 32) + (BYTES_PER_SECTOR - 1)) / BYTES_PER_SECTOR;
     uint32_t tot_sec = tot_sec_16 ? tot_sec_16 : tot_sec_32;
     f->F_FATSZ = fat_sz_16 ? fat_sz_16 : fat_sz_32;
@@ -75,13 +76,15 @@ static FFatResult parse_bpb_and_set_fat_type(FFat* f)
     f->F_DATA = (f->F_FATST + (f->F_NFATS * f->F_FATSZ) + root_dir_sectors);
     uint32_t count_of_clusters = (tot_sec - f->F_DATA) / f->F_SPC;
     
-    if (count_of_clusters < 4085)
+    if (count_of_clusters < 4085) {
         return F_UNSUPPORTED_FS;
-    else if (count_of_clusters < 65525)
+    } else if (count_of_clusters < 65525) {
         f->F_TYPE = FAT16;
-    else
+    } else {
         f->F_TYPE = FAT32;
-    
+        f->F_ROOT = f->buffer[BPB_ROOTCLUS];
+    }
+
     return F_OK;
 }
 
