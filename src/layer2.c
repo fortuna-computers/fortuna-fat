@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#include "layer1.h"
+
 #define TRY(expr) { FFatResult r = (expr); if (r != F_OK) return r; }
 
 // region -> Initialization
@@ -14,7 +16,7 @@ FFatResult f_init_layer2(FFat* f)
 
 // endregion
 
-// region -> Directory management
+// region -> Utils
 
 typedef enum DirAttr {
     READ_ONLY = 0x1,
@@ -77,12 +79,41 @@ FFatResult f_adjust_filename(FFat* f)
     return F_OK;
 }
 
+static FFatResult f_foreach_dir_entry(FFat* f, uint32_t cluster, uint16_t sector, FFatResult (*func)(FFat*, DirEntry*, void*), void* data)
+{
+    f->F_CLSTR = cluster;
+    f->F_SCTR = sector;
+    TRY(f_read_data(f))
+    for (uint16_t i = 0; i < 512; i += 32)
+        func(f, (DirEntry *) &f->buffer[i], data);
+    // TODO - next sector/cluster
+    return F_OK;
+}
+
+// endregion
+
+// region -> Directory management
+
+typedef struct TFindNextDir {
+    uint32_t create_in_cluster;
+    uint16_t create_in_sector;
+    uint16_t create_in_index;
+    bool     exists;
+} TFindNextDir;
+
+static FFatResult f_find_next_dir(FFat* f, DirEntry* dir_entry, void* data)
+{
+    return F_OK;
+}
+
 FFatResult f_mkdir_(FFat* f)
 {
     // validate filename
     TRY(f_adjust_filename(f))
 
     // check if directory does not already exists
+    TFindNextDir find_next_dir = { 0, 0, 0, false };
+    TRY(f_foreach_dir_entry(f, f->F_CD_CLSTR, 0, f_find_next_dir, &find_next_dir))
 
     // allocate area for the new directory
 
