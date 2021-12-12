@@ -434,6 +434,41 @@ static bool test_f_read_write(FFat* f, UNUSED Scenario scenario)
 
 #if LAYER_IMPLEMENTED >= 2
 
+#include "../src/layer2.h"
+
+static bool test_f_adjust_filename(FFat* f, UNUSED Scenario scenario)
+{
+#pragma GCC diagnostic ignored "-Wformat-zero-length"
+#define ASSERT_ADJF(s1, s2) { \
+    sprintf((char *) f->buffer, s1); \
+    f_adjust_filename(f); \
+    ASSERT(strcmp((const char *) f->buffer, s2) == 0); \
+}
+#define ASSERT_INVALID(s1) { \
+    sprintf((char *) f->buffer, s1); \
+    f_adjust_filename(f); \
+    ASSERT(f_adjust_filename(f) == F_INVALID_FILENAME); \
+}
+
+    ASSERT_ADJF("foo.bar",      "FOO     BAR");
+    ASSERT_ADJF("FOO.BAR",      "FOO     BAR");
+    ASSERT_ADJF("Foo.Bar",      "FOO     BAR");
+    ASSERT_ADJF("foo",          "FOO        ");
+    ASSERT_ADJF("PICKLE.A",     "PICKLE  A  ");
+    ASSERT_ADJF("prettybg.big", "PRETTYBGBIG");
+
+    ASSERT_INVALID(".big");
+    ASSERT_INVALID("");
+    ASSERT_INVALID("largefilename.dot");
+    ASSERT_INVALID("a*b");
+
+#undef ASSERT_INVALID
+#undef ASSERT_ADJF
+#pragma GCC diagnostic warning "-Wformat-zero-length"
+
+    return true;
+}
+
 static bool test_f_mkdir(FFat* f, UNUSED Scenario scenario)
 {
     sprintf((char *) f->buffer, "1");
@@ -499,6 +534,7 @@ static const Test test_list_[] = {
         { "Layer 1: F_READ_DATA / F_WRITE_DATA", layer1_scenarios, test_f_read_write },
 #endif
 #if LAYER_IMPLEMENTED >= 2
+        { "Layer 2: Adjust filename", layer0_scenarios, test_f_adjust_filename },
         { "Layer 2: F_MKDIR", layer1_scenarios, test_f_mkdir },
 #endif
         { NULL, NULL, NULL },

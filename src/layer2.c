@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#define TRY(expr) { FFatResult r = (expr); if (r != F_OK) return r; }
+
 // region -> Initialization
 
 FFatResult f_init_layer2(FFat* f)
@@ -38,38 +40,39 @@ typedef struct DirEntry {
     uint32_t  file_size;
 } __attribute__((packed)) DirEntry;
 
-FFatResult adjust_filename(char* filename, bool is_file)
+FFatResult f_adjust_filename(FFat* f)
 {
-    if (filename[0] == '.' || filename[0] == '\0')
+    if (f->buffer[0] == '.' || f->buffer[0] == '\0')
         return F_INVALID_FILENAME;
 
-    uint8_t idx = 0;
-    while (filename[idx] != '\0') {
-        if (idx >= 8)
+    // copy current string to position 12 - string starting in 0 will be the converted string
+    const char* origin = (const char *) &f->buffer[13];
+    char* dest = (char *) f->buffer;
+    memcpy((char *) &f->buffer[13], dest, 13);
+    memset(dest, ' ', 11);
+    dest[11] = '\0';
+
+    char c;
+    uint8_t orig_i = 0, dest_i = 0;
+
+    bool extension = false;
+    while ((c = origin[orig_i]) != '\0') {
+
+        if ((dest_i > 8 && !extension) || (dest_i > 11 && extension)) {
             return F_INVALID_FILENAME;
-
-        char c = filename[idx];
-        if (c < 0x20 || c == 0x22 || (c >= 0x2a && c <= 0x2f) || (c >= 0x3a && c <= 0x3f) || (c >= 0x5b && c <= 0x5d) || c == 0x7c)
+        } else if (c == '.' && !extension) {
+            dest_i = 8;
+            extension = true;
+        } else if (c < 0x20 || c == 0x22 || (c >= 0x2a && c <= 0x2f) || (c >= 0x3a && c <= 0x3f) || (c >= 0x5b && c <= 0x5d) || c == 0x7c) {
             return F_INVALID_FILENAME;
-
-        if (filename[idx] >= 'a' && filename[idx] <= 'z')
-            filename[idx] -= ('a' - 'A');
-
-        if (c == '.') {
-            int length = strlen(filename);
-            if (is_file) {
-                filename[9] = length > (idx+1) ? filename[idx+1] : ' ';
-                filename[10] = length > (idx+2) ? filename[idx+2] : ' ';
-                filename[11] = length > (idx+3) ? filename[idx+3] : ' ';
-            } else {
-                return F_INVALID_FILENAME;
-            }
+        } else if (origin[orig_i] >= 'a' && origin[orig_i] <= 'z') {
+            dest[dest_i++] = c - ('a' - 'A');
+        } else {
+            dest[dest_i++] = c;
         }
 
-        ++idx;
+        ++orig_i;
     }
-
-    // TODO...
 
     return F_OK;
 }
@@ -77,7 +80,7 @@ FFatResult adjust_filename(char* filename, bool is_file)
 FFatResult f_mkdir_(FFat* f)
 {
     // validate filename
-    TRY(adjust_filename((char *) f->buffer), false)
+    TRY(f_adjust_filename(f))
 
     // check if directory does not already exists
 
