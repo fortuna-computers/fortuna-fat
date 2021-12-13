@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -13,24 +12,42 @@
 static BYTE work[FF_MAX_SS];
 static uint8_t  img_data[IMG_SZ];
 
-bool raw_write(uint64_t sector, uint8_t const* buffer)
-{
-    memcpy(&img_data[sector * SECTOR_SZ], buffer, SECTOR_SZ);
-    return true;
-}
-
-bool raw_read(uint64_t sector, uint8_t* buffer)
-{
-    memcpy(buffer, &img_data[sector * SECTOR_SZ], SECTOR_SZ);
-    return true;
-}
-
 static void R(FRESULT fresult)
 {
     if (fresult != FR_OK) {
         fprintf(stderr, "FatFS operation failed.\n");
         exit(EXIT_FAILURE);
     }
+}
+
+static void add_files()
+{
+    FIL fp;
+    UINT bw;
+
+    const char* hello_world = "Hello world!";
+
+    R(f_open(&fp, "FORTUNA.DAT", FA_WRITE | FA_CREATE_ALWAYS));
+    R(f_write(&fp, hello_world, strlen(hello_world), &bw));
+    R(f_close(&fp));
+
+    R(f_mkdir("HELLO"));
+    R(f_chdir("HELLO"));
+    R(f_mkdir("FORTUNA"));
+    R(f_mkdir("WORLD"));
+    R(f_chdir("WORLD"));
+
+    R(f_open(&fp, "WORLD.TXT", FA_WRITE | FA_CREATE_ALWAYS));
+    R(f_write(&fp, hello_world, strlen(hello_world), &bw));
+    R(f_close(&fp));
+
+    extern uint8_t _binary_tests_TAGS_TXT_start[];
+    extern uint8_t _binary_tests_TAGS_TXT_end[];
+
+    R(f_chdir("/"));
+    R(f_open(&fp, "TAGS.TXT", FA_CREATE_NEW | FA_WRITE));
+    R(f_write(&fp, _binary_tests_TAGS_TXT_start, (_binary_tests_TAGS_TXT_end - _binary_tests_TAGS_TXT_start), &bw));
+    R(f_close(&fp));
 }
 
 int main()
@@ -45,7 +62,7 @@ int main()
 
     FATFS* fatfs = calloc(1, sizeof(FATFS));
     R(f_mount(fatfs, "", 0));
-    R(f_mkdir("temp"));
+    add_files();
     R(f_mount(NULL, "", 0));
     free(fatfs);
 
