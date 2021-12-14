@@ -494,6 +494,9 @@ static bool test_f_mkdir(FFat* f, UNUSED Scenario scenario)
     return true;
 }
 
+// TODO - mkdir - many directories
+// TODO - try to create a already existing directory
+
 #endif  // LAYER_IMPLEMENT >= 2
 
 // endregion

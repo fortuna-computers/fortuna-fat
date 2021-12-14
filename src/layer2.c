@@ -6,6 +6,8 @@
 
 #define TRY(expr) { FFatResult r = (expr); if (r != F_OK) return r; }
 
+#define DIR_ENTRY_SZ 32
+
 // region -> Initialization
 
 FFatResult f_init_layer2(FFat* f)
@@ -101,42 +103,72 @@ static FFatResult f_foreach_dir_entry(FFat* f, uint32_t cluster, uint16_t sector
 
 // region -> Directory management
 
+typedef struct DirEntryPtr {
+    uint32_t cluster;
+    uint16_t sector;
+    uint16_t index;
+} DirEntryPtr;
+
 typedef struct TFindNextDir {
-    uint32_t create_in_cluster;
-    uint16_t create_in_sector;
-    uint16_t create_in_index;
-    bool     exists;
+    DirEntryPtr dir_ptr;
+    bool        exists;
+    bool        empty_entry_found;
 } TFindNextDir;
 
 static FFatResult f_find_next_dir(FFat* f, DirEntry* dir_entry, uint32_t cluster, uint16_t sector, uint16_t index, void* data)
 {
     TFindNextDir* find_next_dir = data;
     if (dir_entry->name[0] == 0x0 && !find_next_dir->exists) {
-        find_next_dir->create_in_cluster = cluster;
-        find_next_dir->create_in_sector = sector;
-        find_next_dir->create_in_index = index;
-        find_next_dir->exists = true;
+        find_next_dir->dir_ptr = (DirEntryPtr) { cluster, sector, index };
+        find_next_dir->empty_entry_found = true;
         return F_DONE;
+    } else {
+        // TODO - check if the directory has the same name
     }
+    return F_OK;
+}
+
+static FFatResult f_create_dir_entry(const char* filename, uint32_t cluster, DirEntryPtr const* dir_ptr)
+{
+    return F_NOT_IMPLEMENTED;  // TODO
+}
+
+static FFatResult f_create_empty_dir(uint32_t cluster, uint32_t parent_cluster)
+{
+    DirEntryPtr dir_ptr = { cluster, 0, 0 };
+    TRY(f_create_dir_entry(".", cluster, &dir_ptr))
+    dir_ptr.index += DIR_ENTRY_SZ;
+    TRY(f_create_dir_entry("..", parent_cluster, &dir_ptr))
     return F_OK;
 }
 
 FFatResult f_mkdir_(FFat* f)
 {
     // validate filename
+    char tmp_filename[12];
     TRY(f_adjust_filename(f))
+    memcpy(tmp_filename, f->buffer, 12);
 
-    // check if directory does not already exists
-    TFindNextDir find_next_dir = { 0, 0, 0, false };
+    // check if directory does not already exists, and find where to create the dir entry
+    TFindNextDir find_next_dir = { { 0, 0, 0 }, false, false };
     TRY(f_foreach_dir_entry(f, f->F_CD_CLSTR, 0, f_find_next_dir, &find_next_dir))
+    if (find_next_dir.exists)
+        return F_FILE_ALREADY_EXISTS;
+    if (!find_next_dir.empty_entry_found)
+        return F_NO_SPACE_LEFT;
 
     // allocate area for the new directory
+    f->F_CLSTR = 0;
+    f_append(f);
+    uint32_t new_dir_cluster = f->F_CLSTR;
 
     // create new directory entry in parent
+    TRY(f_create_dir_entry(tmp_filename, new_dir_cluster, &find_next_dir.dir_ptr))
 
     // create '.' and '..' in new directory
+    TRY(f_create_empty_dir(new_dir_cluster, find_next_dir.dir_ptr.cluster))
 
-    return F_NOT_IMPLEMENTED;
+    return F_OK;
 }
 
 // endregion

@@ -41,6 +41,8 @@ typedef enum FFatResult {
 #endif
 #if LAYER_IMPLEMENTED >= 2
     F_INVALID_FILENAME      = 0x20,
+    F_NO_SPACE_LEFT         = 0x21,
+    F_FILE_ALREADY_EXISTS   = 0x22,
 #endif
     F_DONE                  = 0xfe,  // internal use
     F_NOT_IMPLEMENTED       = 0xff,
