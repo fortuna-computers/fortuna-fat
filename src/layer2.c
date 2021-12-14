@@ -79,14 +79,21 @@ FFatResult f_adjust_filename(FFat* f)
     return F_OK;
 }
 
-static FFatResult f_foreach_dir_entry(FFat* f, uint32_t cluster, uint16_t sector, FFatResult (*func)(FFat*, DirEntry*, void*), void* data)
+static FFatResult f_foreach_dir_entry(FFat* f, uint32_t cluster, uint16_t sector, FFatResult (*func)(FFat*, DirEntry*, uint32_t, uint16_t, uint16_t, void*), void* data)
 {
     f->F_CLSTR = cluster;
     f->F_SCTR = sector;
     TRY(f_read_data(f))
-    for (uint16_t i = 0; i < 512; i += 32)
-        func(f, (DirEntry *) &f->buffer[i], data);
-    // TODO - next sector/cluster
+    for (uint16_t i = 0; i < 512; i += 32) {
+        FFatResult r = func(f, (DirEntry *) &f->buffer[i], cluster, sector, i, data);
+        if (r == F_DONE)
+            return F_OK;
+        else if (r != F_OK)
+            return r;
+    }
+
+    // TODO - advance to next sector/cluster
+
     return F_OK;
 }
 
@@ -101,8 +108,16 @@ typedef struct TFindNextDir {
     bool     exists;
 } TFindNextDir;
 
-static FFatResult f_find_next_dir(FFat* f, DirEntry* dir_entry, void* data)
+static FFatResult f_find_next_dir(FFat* f, DirEntry* dir_entry, uint32_t cluster, uint16_t sector, uint16_t index, void* data)
 {
+    TFindNextDir* find_next_dir = data;
+    if (dir_entry->name[0] == 0x0 && !find_next_dir->exists) {
+        find_next_dir->create_in_cluster = cluster;
+        find_next_dir->create_in_sector = sector;
+        find_next_dir->create_in_index = index;
+        find_next_dir->exists = true;
+        return F_DONE;
+    }
     return F_OK;
 }
 
