@@ -128,17 +128,22 @@ static FFatResult f_find_next_dir(FFat* f, DirEntry* dir_entry, uint32_t cluster
     return F_OK;
 }
 
-static FFatResult f_create_dir_entry(const char* filename, uint32_t cluster, DirEntryPtr const* dir_ptr)
+static FFatResult f_create_dir_entry(FFat* f, const char* filename, uint32_t cluster, DirEntryPtr const* dir_ptr)
 {
+    f->F_CLSTR = dir_ptr->cluster;
+    f->F_SCTR = dir_ptr->sector;
+    TRY(f_read_data(f))
+    
+
     return F_NOT_IMPLEMENTED;  // TODO
 }
 
 static FFatResult f_create_empty_dir(uint32_t cluster, uint32_t parent_cluster)
 {
     DirEntryPtr dir_ptr = { cluster, 0, 0 };
-    TRY(f_create_dir_entry(".", cluster, &dir_ptr))
+    TRY(f_create_dir_entry(f, ".", cluster, &dir_ptr))
     dir_ptr.index += DIR_ENTRY_SZ;
-    TRY(f_create_dir_entry("..", parent_cluster, &dir_ptr))
+    TRY(f_create_dir_entry(f, "..", parent_cluster, &dir_ptr))
     return F_OK;
 }
 
@@ -163,7 +168,7 @@ FFatResult f_mkdir_(FFat* f)
     uint32_t new_dir_cluster = f->F_CLSTR;
 
     // create new directory entry in parent
-    TRY(f_create_dir_entry(tmp_filename, new_dir_cluster, &find_next_dir.dir_ptr))
+    TRY(f_create_dir_entry(f, tmp_filename, new_dir_cluster, &find_next_dir.dir_ptr))
 
     // create '.' and '..' in new directory
     TRY(f_create_empty_dir(new_dir_cluster, find_next_dir.dir_ptr.cluster))
