@@ -133,12 +133,21 @@ static FFatResult f_create_dir_entry(FFat* f, const char* filename, uint32_t clu
     f->F_CLSTR = dir_ptr->cluster;
     f->F_SCTR = dir_ptr->sector;
     TRY(f_read_data(f))
-    
 
-    return F_NOT_IMPLEMENTED;  // TODO
+    DirEntry dir_entry = {0};
+    memcpy(dir_entry.name, filename, 11);
+    dir_entry.attr = DIRECTORY;
+    dir_entry.fst_clus_hi = (cluster >> 16);
+    dir_entry.fst_clus_lo = (cluster & 0xffff);
+    // TODO: add date/time
+
+    memcpy(&f->buffer[dir_ptr->index], &dir_entry, sizeof(DirEntry));
+    TRY(f_write_data(f))
+
+    return F_OK;
 }
 
-static FFatResult f_create_empty_dir(uint32_t cluster, uint32_t parent_cluster)
+static FFatResult f_create_empty_dir(FFat* f, uint32_t cluster, uint32_t parent_cluster)
 {
     DirEntryPtr dir_ptr = { cluster, 0, 0 };
     TRY(f_create_dir_entry(f, ".", cluster, &dir_ptr))
@@ -171,7 +180,7 @@ FFatResult f_mkdir_(FFat* f)
     TRY(f_create_dir_entry(f, tmp_filename, new_dir_cluster, &find_next_dir.dir_ptr))
 
     // create '.' and '..' in new directory
-    TRY(f_create_empty_dir(new_dir_cluster, find_next_dir.dir_ptr.cluster))
+    TRY(f_create_empty_dir(f, new_dir_cluster, find_next_dir.dir_ptr.cluster))
 
     return F_OK;
 }
