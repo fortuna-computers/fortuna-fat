@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "layer1.h"
+#include "layer0.h"
 
 #define TRY(expr) { FFatResult r = (expr); if (r != F_OK) return r; }
 
@@ -13,9 +14,39 @@
 FFatResult f_init_layer2(FFat* f)
 {
     if (f->F_TYPE == FAT16)
-        f->F_CD_CLSTR = 0;
+        f->F_CD_CLSTR = 0;  // special case where 0 = root dir
     else
         f->F_CD_CLSTR = f->F_ROOT;
+    return F_OK;
+}
+
+// endregion
+
+// region -> Data loading
+
+static FFatResult f_read_sector(FFat* f, uint32_t cluster, uint16_t sector)
+{
+    if (cluster == 0 && f->F_TYPE == FAT16) {
+        f->F_RAWSEC = f->F_ABS + f->F_ROOT;
+        TRY(f_raw_read(f))
+    } else {
+        f->F_CLSTR = cluster;
+        f->F_SCTR = sector;
+        TRY(f_read_data(f))
+    }
+    return F_OK;
+}
+
+static FFatResult f_write_sector(FFat* f, uint32_t cluster, uint16_t sector)
+{
+    if (cluster == 0 && f->F_TYPE == FAT16) {
+        f->F_RAWSEC = f->F_ABS + f->F_ROOT;
+        TRY(f_raw_write(f))
+    } else {
+        f->F_CLSTR = cluster;
+        f->F_SCTR = sector;
+        TRY(f_write_data(f))
+    }
     return F_OK;
 }
 
@@ -86,9 +117,7 @@ FFatResult f_adjust_filename(FFat* f)
 
 static FFatResult f_foreach_dir_entry(FFat* f, uint32_t cluster, uint16_t sector, FFatResult (*func)(FFat*, DirEntry*, uint32_t, uint16_t, uint16_t, void*), void* data)
 {
-    f->F_CLSTR = cluster;
-    f->F_SCTR = sector;
-    TRY(f_read_data(f))
+    TRY(f_read_sector(f, cluster, sector))
     for (uint16_t i = 0; i < 512; i += 32) {
         FFatResult r = func(f, (DirEntry *) &f->buffer[i], cluster, sector, i, data);
         if (r == F_DONE)
@@ -120,6 +149,8 @@ typedef struct TFindNextDir {
 
 static FFatResult f_find_next_dir(FFat* f, DirEntry* dir_entry, uint32_t cluster, uint16_t sector, uint16_t index, void* data)
 {
+    (void) f;
+
     TFindNextDir* find_next_dir = data;
     if (dir_entry->name[0] == 0x0 && !find_next_dir->exists) {
         find_next_dir->dir_ptr = (DirEntryPtr) { cluster, sector, index };
@@ -133,9 +164,7 @@ static FFatResult f_find_next_dir(FFat* f, DirEntry* dir_entry, uint32_t cluster
 
 static FFatResult f_create_dir_entry(FFat* f, const char* filename, uint32_t cluster, DirEntryPtr const* dir_ptr)
 {
-    f->F_CLSTR = dir_ptr->cluster;
-    f->F_SCTR = dir_ptr->sector;
-    TRY(f_read_data(f))
+    TRY(f_read_sector(f, dir_ptr->cluster, dir_ptr->sector))
 
     DirEntry dir_entry = {0};
     memcpy(dir_entry.name, filename, 11);
@@ -145,7 +174,7 @@ static FFatResult f_create_dir_entry(FFat* f, const char* filename, uint32_t clu
     // TODO: add date/time
 
     memcpy(&f->buffer[dir_ptr->index], &dir_entry, sizeof(DirEntry));
-    TRY(f_write_data(f))
+    TRY(f_write_sector(f, dir_ptr->cluster, dir_ptr->sector))
 
     return F_OK;
 }

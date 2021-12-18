@@ -480,8 +480,6 @@ static bool test_f_mkdir(FFat* f, UNUSED Scenario scenario)
     sprintf((char *) f->buffer, "3");
     X_OK(ffat_op(f, F_MKDIR));
 
-    export_image("img.bin");
-
     FATFS* fatfs = calloc(1, sizeof(FATFS));
     R(f_mount(fatfs, "", 0));
 
@@ -521,7 +519,6 @@ static const Scenario layer1_scenarios[] = {
 #endif
 
 static const Test test_list_[] = {
-        /*
         { "Layer 0: sector access", layer0_scenarios, test_raw_sector },
         { "Layer 0: sector past end of image", layer0_scenarios, test_raw_sector_past_end_of_image },
         { "Layer 0: I/O error", layer0_scenarios, test_raw_sector_io_error },
@@ -543,8 +540,6 @@ static const Test test_list_[] = {
 #endif
 #if LAYER_IMPLEMENTED >= 2
         { "Layer 2: Adjust filename", layer0_scenarios, test_f_adjust_filename },
-         */
-#if 1 // TODO
         { "Layer 2: F_MKDIR", layer1_scenarios, test_f_mkdir },
 #endif
         { NULL, NULL, NULL },
