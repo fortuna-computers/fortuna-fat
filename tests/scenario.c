@@ -67,15 +67,6 @@ void scenario_fat32()
     
     MKFS_PARM mkfs_parm = { .fmt = FM_FAT32, .n_fat = 2, .align = 1, .au_size = 4 * 512U };
     R(f_mkfs("", &mkfs_parm, work, sizeof work));
-
-    /*
-    FATFS* fatfs = calloc(1, sizeof(FATFS));
-    R(f_mount(fatfs, "", 0));
-    R(f_mkdir("temp"));
-    R(f_mount(NULL, "", 0));
-    free(fatfs);
-    export_image("/tmp/img.img");
-     */
 }
 
 void scenario_fat32_align512()

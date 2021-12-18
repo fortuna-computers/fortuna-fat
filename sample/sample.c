@@ -6,7 +6,7 @@
 #include "../tests/ff/ff.h"
 #include "../tests/ff/diskio.h"
 
-#define IMG_SZ  (256 * 1024 * 1024)
+#define IMG_SZ  (16 * 1024 * 1024)
 #define SECTOR_SZ 512
 
 static BYTE work[FF_MAX_SS];
@@ -57,7 +57,7 @@ int main()
     LBA_t lba[] = { 100, 0 };
     R(f_fdisk(0, lba, work));
 
-    MKFS_PARM mkfs_parm = { .fmt = FM_FAT32, .n_fat = 2, .align = 1, .au_size = 4 * 512U };
+    MKFS_PARM mkfs_parm = { .fmt = FM_FAT, .n_fat = 2, .align = 1 };
     R(f_mkfs("", &mkfs_parm, work, sizeof work));
 
     FATFS* fatfs = calloc(1, sizeof(FATFS));

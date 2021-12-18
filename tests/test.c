@@ -488,6 +488,8 @@ static bool test_f_mkdir(FFat* f, UNUSED Scenario scenario)
     R(f_opendir(&dp, "2"));
     R(f_opendir(&dp, "3"));
 
+    // TODO - check date and time
+
     R(f_mount(NULL, "", 0));
     free(fatfs);
 
