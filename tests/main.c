@@ -44,6 +44,8 @@ int main()
             if (j == 0)
                 printf("%-40s", scenario_name);
             if (has_scenario(&test_list[j], scenario_list[i])) {
+                f.F_PARM = 0;
+                ffat_op(&f, F_INIT);
                 if (test_list[j].run_test(&f, scenario_list[i]))
                     // printf(GRN "\u2713" RST);
                     printf(GRN "." RST);

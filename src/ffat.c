@@ -29,8 +29,8 @@ FFatResult ffat_op(FFat* f, FFat32Op op)
         case F_APPEND:     return f->F_RSLT = f_append(f);
         case F_TRUNCATE:   return f->F_RSLT = f_truncate_(f);
         case F_REMOVE:     return f->F_RSLT = f_remove(f);
-        case F_READ_DATA:  return f->F_RSLT = f_read_data(f);
-        case F_WRITE_DATA: return f->F_RSLT = f_write_data(f);
+        case F_READ_DATA:  return f->F_RSLT = f_read_data(f, false);
+        case F_WRITE_DATA: return f->F_RSLT = f_write_data(f, false);
 #endif
 #if LAYER_IMPLEMENTED >= 2
         case F_MKDIR:      return f->F_RSLT = f_mkdir_(f);

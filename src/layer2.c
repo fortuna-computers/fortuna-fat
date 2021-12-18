@@ -12,7 +12,10 @@
 
 FFatResult f_init_layer2(FFat* f)
 {
-    f->F_CD_CLSTR = f->F_ROOT;
+    if (f->F_TYPE == FAT16)
+        f->F_CD_CLSTR = 0;
+    else
+        f->F_CD_CLSTR = f->F_ROOT;
     return F_OK;
 }
 

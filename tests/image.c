@@ -37,7 +37,9 @@ uint64_t total_sectors()
 void export_image(const char* filename)
 {
     FILE* f = fopen(filename, "w");
-    fwrite(img_data, img_sz, 1, f);
+    size_t r = fwrite(img_data, img_sz, 1, f);
+    if (r <= 0)
+        abort();
     fclose(f);
 }
 
