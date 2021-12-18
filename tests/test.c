@@ -483,12 +483,16 @@ static bool test_f_mkdir(FFat* f, UNUSED Scenario scenario)
     FATFS* fatfs = calloc(1, sizeof(FATFS));
     R(f_mount(fatfs, "", 0));
 
-    DIR dp;
-    R(f_opendir(&dp, "1"));
-    R(f_opendir(&dp, "2"));
-    R(f_opendir(&dp, "3"));
-
-    // TODO - check date and time
+    FILINFO fno;
+    R(f_stat("1", &fno))
+    ASSERT(fno.fattrib & AM_DIR)
+    ASSERT(fno.fdate == EXPECTED_DATE)
+    ASSERT(fno.ftime == EXPECTED_TIME)
+    ASSERT(fno.fsize == 0)
+    R(f_stat("2", &fno))
+    ASSERT(fno.fattrib & AM_DIR)
+    R(f_stat("3", &fno))
+    ASSERT(fno.fattrib & AM_DIR)
 
     R(f_mount(NULL, "", 0));
     free(fatfs);

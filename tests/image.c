@@ -6,6 +6,7 @@
 
 #include "ff/ff.h"
 #include "ff/diskio.h"
+#include "test.h"
 
 #define IMG_SZ  (512 * 1024 * 1024)
 
@@ -32,6 +33,11 @@ bool raw_read(uint64_t sector, uint8_t* buffer)
 uint64_t total_sectors()
 {
     return img_sz;
+}
+
+uint32_t current_datetime()
+{
+    return (((uint32_t) EXPECTED_DATE) << 16) | EXPECTED_TIME;
 }
 
 void export_image(const char* filename)

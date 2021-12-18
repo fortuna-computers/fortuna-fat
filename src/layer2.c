@@ -164,6 +164,8 @@ static FFatResult f_find_next_dir(FFat* f, DirEntry* dir_entry, uint32_t cluster
 
 static FFatResult f_create_dir_entry(FFat* f, const char* filename, uint32_t cluster, DirEntryPtr const* dir_ptr)
 {
+    uint32_t dt = current_datetime();
+
     TRY(f_read_sector(f, dir_ptr->cluster, dir_ptr->sector))
 
     DirEntry dir_entry = {0};
@@ -171,7 +173,8 @@ static FFatResult f_create_dir_entry(FFat* f, const char* filename, uint32_t clu
     dir_entry.attr = DIRECTORY;
     dir_entry.fst_clus_hi = (cluster >> 16);
     dir_entry.fst_clus_lo = (cluster & 0xffff);
-    // TODO: add date/time
+    dir_entry.crt_date = dir_entry.wrt_date = (dt >> 16);
+    dir_entry.crt_time = dir_entry.wrt_time = (dt & 0xffff);
 
     memcpy(&f->buffer[dir_ptr->index], &dir_entry, sizeof(DirEntry));
     TRY(f_write_sector(f, dir_ptr->cluster, dir_ptr->sector))

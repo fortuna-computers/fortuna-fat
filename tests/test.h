@@ -5,6 +5,9 @@
 #include "../src/ffat.h"
 #include "scenario.h"
 
+#define EXPECTED_DATE 0x02e9  // 9th Jul 1981
+#define EXPECTED_TIME 0xabc0  // 9:30 pm
+
 typedef struct Test {
     const char*     name;
     Scenario const* scenarios;

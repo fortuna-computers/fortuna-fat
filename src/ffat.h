@@ -76,9 +76,10 @@ typedef struct __attribute__((__packed__)) FFat {
 
 FFatResult ffat_op(FFat* f, FFat32Op op);
 
-// please implement these three functions
+// please implement these four functions
 bool     raw_write(uint64_t sector, uint8_t const* buffer);
 bool     raw_read(uint64_t sector, uint8_t* buffer);
+uint32_t current_datetime();
 uint64_t total_sectors();
 
 #endif
