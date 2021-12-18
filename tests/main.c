@@ -24,7 +24,7 @@ int main()
     FFat f = {0};
     f.buffer = buffer;
     
-    size_t i = 0, j = 0;
+    size_t i = 0;
     do {
         printf("[%c] %s\n", (char) i + 'A', test_list[i].name);
         ++i;
@@ -38,7 +38,7 @@ int main()
     
     i = 0;
     do {
-        j = 0;
+        size_t j = 0;
         do {
             scenario_list[i]();  // prepare scenario
             if (j == 0)

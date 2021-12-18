@@ -80,6 +80,7 @@ static FFatResult parse_bpb_and_set_fat_type(FFat* f)
         return F_UNSUPPORTED_FS;
     } else if (count_of_clusters < 65525) {
         f->F_TYPE = FAT16;
+        f->F_ROOT = f->F_FATST + (f->F_NFATS * f->F_FATSZ);
     } else {
         f->F_TYPE = FAT32;
         f->F_ROOT = f->buffer[BPB_ROOTCLUS];
