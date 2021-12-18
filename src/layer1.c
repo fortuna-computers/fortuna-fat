@@ -68,6 +68,7 @@ static FFatResult parse_bpb_and_set_fat_type(FFat* f)
     f->F_FATST = frombuf16(f->buffer, BPB_RESVD_SEC_CNT);
     f->F_NFATS = f->buffer[BPB_NUM_FATS];
     f->F_SPC = f->buffer[BPB_SEC_PER_CLUS];
+    f->F_ROOT_DIRS = root_ent_cnt;
 
     uint32_t root_dir_sectors = ((root_ent_cnt * 32) + (BYTES_PER_SECTOR - 1)) / BYTES_PER_SECTOR;
     uint32_t tot_sec = tot_sec_16 ? tot_sec_16 : tot_sec_32;

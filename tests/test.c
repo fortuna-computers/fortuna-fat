@@ -500,6 +500,33 @@ static bool test_f_mkdir(FFat* f, UNUSED Scenario scenario)
     return true;
 }
 
+static bool test_f_mkdir_many(FFat* f, UNUSED Scenario scenario)
+{
+    for (size_t i = 0; i < (f->F_TYPE == FAT16 ? f->F_ROOT_DIRS : 1000); ++i) {
+        sprintf((char *) f->buffer, "%zu", i);
+        X_OK(ffat_op(f, F_MKDIR));
+    }
+
+    FATFS* fatfs = calloc(1, sizeof(FATFS));
+    R(f_mount(fatfs, "", 0));
+
+    for (size_t i = 0; i < 1000; ++i) {
+        char buf[10];
+        FILINFO fno;
+        sprintf(buf, "%zu", i);
+        R(f_stat(buf, &fno));
+        ASSERT(fno.fattrib & AM_DIR)
+        ASSERT(fno.fdate == EXPECTED_DATE)
+        ASSERT(fno.ftime == EXPECTED_TIME)
+        ASSERT(fno.fsize == 0)
+    }
+
+    R(f_mount(NULL, "", 0));
+    free(fatfs);
+
+    return true;
+}
+
 // TODO - mkdir - many directories
 // TODO - try to create a already existing directory
 
@@ -545,6 +572,7 @@ static const Test test_list_[] = {
 #if LAYER_IMPLEMENTED >= 2
         { "Layer 2: Adjust filename", layer0_scenarios, test_f_adjust_filename },
         { "Layer 2: F_MKDIR", layer1_scenarios, test_f_mkdir },
+        { "Layer 2: F_MKDIR (many directories)", layer1_scenarios, test_f_mkdir_many },
 #endif
         { NULL, NULL, NULL },
 };

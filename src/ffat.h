@@ -43,6 +43,7 @@ typedef enum FFatResult {
     F_INVALID_FILENAME      = 0x20,
     F_NO_SPACE_LEFT         = 0x21,
     F_FILE_ALREADY_EXISTS   = 0x22,
+    F_TOO_MANY_DIRS         = 0x23,
 #endif
     F_DONE                  = 0xfe,  // internal use
     F_NOT_IMPLEMENTED       = 0xff,
@@ -58,6 +59,7 @@ typedef struct __attribute__((__packed__)) FFat {
     uint16_t F_SCTR;          // sector parameter (sector count starting on cluster)
     uint32_t F_PARM;          // additional parameter
     uint32_t F_ROOT;          // root directory sector
+    uint16_t F_ROOT_DIRS;     // maximum number of directories in root dir (FAT16)
     uint8_t  F_SPC;           // sectors per cluster
     uint32_t F_ABS;           // partition sector start (from beginning of disk)
     uint16_t F_FATST;         // FAT starting sector
