@@ -117,16 +117,31 @@ FFatResult f_adjust_filename(FFat* f)
 
 static FFatResult f_foreach_dir_entry(FFat* f, uint32_t cluster, uint16_t sector, FFatResult (*func)(FFat*, DirEntry*, uint32_t, uint16_t, uint16_t, void*), void* data)
 {
-    TRY(f_read_sector(f, cluster, sector))
-    for (uint16_t i = 0; i < 512; i += 32) {
-        FFatResult r = func(f, (DirEntry *) &f->buffer[i], cluster, sector, i, data);
-        if (r == F_DONE)
-            return F_OK;
-        else if (r != F_OK)
-            return r;
-    }
+    FFatResult seek_result = F_OK;
 
-    // TODO - advance to next sector/cluster
+    while (seek_result != F_SEEK_PAST_EOF) {
+
+        // parse sector
+        TRY(f_read_sector(f, cluster, sector))
+        for (uint16_t i = 0; i < 512; i += 32) {
+            FFatResult r = func(f, (DirEntry *) &f->buffer[i], cluster, sector, i, data);
+            if (r == F_DONE)
+                return F_OK;
+            else if (r != F_OK)
+                return r;
+        }
+
+        // go to next cluster/sector
+        if (sector < f->F_SPC) {
+            ++sector;
+        } else {
+            f->F_CLSTR = cluster;
+            f->F_PARM = 1;
+            seek_result = f_seek(f); // advance to next cluster
+            cluster = f->F_CLSTR;
+            sector = 0;
+        }
+    }
 
     return F_OK;
 }

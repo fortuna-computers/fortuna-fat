@@ -59,7 +59,7 @@ typedef struct __attribute__((__packed__)) FFat {
     uint16_t F_SCTR;          // sector parameter (sector count starting on cluster)
     uint32_t F_PARM;          // additional parameter
     uint32_t F_ROOT;          // root directory sector
-    uint16_t F_ROOT_DIRS;     // maximum number of directories in root dir (FAT16)
+    uint16_t F_ROOT_ENTR;     // maximum number of directories in root dir (FAT16)
     uint8_t  F_SPC;           // sectors per cluster
     uint32_t F_ABS;           // partition sector start (from beginning of disk)
     uint16_t F_FATST;         // FAT starting sector
