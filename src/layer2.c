@@ -115,11 +115,27 @@ FFatResult f_adjust_filename(FFat* f)
     return F_OK;
 }
 
+static FFatResult dir_parsing_next_sector(FFat* f, uint32_t* cluster, uint16_t* sector)
+{
+    // go to next cluster/sector
+    if (*sector < f->F_SPC) {
+        ++(*sector);
+    } else {
+        f->F_CLSTR = *cluster;
+        f->F_PARM = 1;
+        FFatResult r = f_seek(f);    // advance to next cluster
+        if (r == F_SEEK_PAST_EOF)    // if no next cluster, add a new one
+            f_append(f);
+        *cluster = f->F_CLSTR;
+        *sector = 0;
+    }
+
+    return F_OK;
+}
+
 static FFatResult f_foreach_dir_entry(FFat* f, uint32_t cluster, uint16_t sector, FFatResult (*func)(FFat*, DirEntry*, uint32_t, uint16_t, uint16_t, void*), void* data)
 {
-    FFatResult seek_result = F_OK;
-
-    while (seek_result != F_SEEK_PAST_EOF) {
+    while (true) {
 
         // parse sector
         TRY(f_read_sector(f, cluster, sector))
@@ -131,19 +147,8 @@ static FFatResult f_foreach_dir_entry(FFat* f, uint32_t cluster, uint16_t sector
                 return r;
         }
 
-        // go to next cluster/sector
-        if (sector < f->F_SPC) {
-            ++sector;
-        } else {
-            f->F_CLSTR = cluster;
-            f->F_PARM = 1;
-            seek_result = f_seek(f); // advance to next cluster
-            cluster = f->F_CLSTR;
-            sector = 0;
-        }
+        TRY(dir_parsing_next_sector(f, &cluster, &sector))
     }
-
-    return F_OK;
 }
 
 // endregion

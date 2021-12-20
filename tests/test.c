@@ -509,6 +509,8 @@ static bool test_f_mkdir_many(FFat* f, UNUSED Scenario scenario)
         X_OK(ffat_op(f, F_MKDIR));
     }
 
+    export_image("img.img");
+
     FATFS* fatfs = calloc(1, sizeof(FATFS));
     R(f_mount(fatfs, "", 0));
 
