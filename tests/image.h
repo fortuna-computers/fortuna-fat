@@ -6,7 +6,7 @@
 
 #define SECTOR_SZ 512
 
-extern uint64_t img_sz;
+extern uint64_t img_sector_count;
 extern uint8_t  img_data[];
 extern bool     emulate_io_error;
 

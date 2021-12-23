@@ -8,10 +8,10 @@
 #include "ff/diskio.h"
 #include "test.h"
 
-#define IMG_SZ  (512 * 1024 * 1024)
+#define MAX_IMG_SZ  (512 * 1024 * 1024)
 
-uint64_t img_sz = 0;
-uint8_t  img_data[IMG_SZ];
+uint64_t img_sector_count = 0;
+uint8_t  img_data[MAX_IMG_SZ];
 bool     emulate_io_error = false;
 
 bool raw_write(uint64_t sector, uint8_t const* buffer)
@@ -32,7 +32,7 @@ bool raw_read(uint64_t sector, uint8_t* buffer)
 
 uint64_t total_sectors()
 {
-    return img_sz;
+    return img_sector_count;
 }
 
 uint32_t current_datetime()
@@ -43,7 +43,7 @@ uint32_t current_datetime()
 void export_image(const char* filename)
 {
     FILE* f = fopen(filename, "w");
-    size_t r = fwrite(img_data, img_sz, 1, f);
+    size_t r = fwrite(img_data, img_sector_count * 512, 1, f);
     if (r <= 0)
         abort();
     fclose(f);
@@ -141,7 +141,7 @@ DRESULT disk_ioctl (
         case CTRL_SYNC:
             return RES_OK;
         case GET_SECTOR_COUNT:
-            *(LBA_t*) buff = img_sz;
+            *(LBA_t*) buff = img_sector_count;
             return RES_OK;
         default:
             abort();
