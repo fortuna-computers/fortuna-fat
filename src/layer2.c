@@ -205,9 +205,15 @@ static FFatResult f_create_dir_entry(FFat* f, const char* filename, uint32_t clu
 static FFatResult f_create_empty_dir(FFat* f, uint32_t cluster, uint32_t parent_cluster)
 {
     DirEntryPtr dir_ptr = { cluster, 0, 0 };
-    TRY(f_create_dir_entry(f, ".", cluster, &dir_ptr))
+
+    char buf[12];
+    memset(buf, ' ', 11);
+    buf[0] = '.';
+    TRY(f_create_dir_entry(f, buf, cluster, &dir_ptr))
+
     dir_ptr.index += DIR_ENTRY_SZ;
-    TRY(f_create_dir_entry(f, "..", parent_cluster, &dir_ptr))
+    buf[1] = '.';
+    TRY(f_create_dir_entry(f, buf, parent_cluster, &dir_ptr))
     return F_OK;
 }
 

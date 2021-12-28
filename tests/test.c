@@ -502,14 +502,16 @@ static bool test_f_mkdir(FFat* f, UNUSED Scenario scenario)
 
 static bool test_f_mkdir_many(FFat* f, UNUSED Scenario scenario)
 {
-    size_t num_dirs = (f->F_TYPE == FAT16 ? f->F_ROOT_ENTR : 80);
+    // size_t num_dirs = (f->F_TYPE == FAT16 ? f->F_ROOT_ENTR : 80);
+    size_t num_dirs = 2;
 
     for (size_t i = 0; i < num_dirs; ++i) {
         sprintf((char *) f->buffer, "%zu", i);
         X_OK(ffat_op(f, F_MKDIR));
-    }
+        export_image("img.img");
+        return true;
 
-    export_image("img.img");
+    }
 
     FATFS* fatfs = calloc(1, sizeof(FATFS));
     R(f_mount(fatfs, "", 0));

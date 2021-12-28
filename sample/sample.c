@@ -58,6 +58,7 @@ int main()
     R(f_fdisk(0, lba, work));
 
     MKFS_PARM mkfs_parm = { .fmt = FM_FAT, .n_fat = 2, .align = 1 };
+    // MKFS_PARM mkfs_parm = { .fmt = FM_FAT32, .n_fat = 2, .align = 1, .au_size = 4 * 512U };
     R(f_mkfs("", &mkfs_parm, work, sizeof work));
 
     FATFS* fatfs = calloc(1, sizeof(FATFS));
