@@ -38,6 +38,7 @@ def open_html():
         }
         .spacing { width: 16px; }
         .zero { color: slategray; }
+        .center { text-align: center; }
         .right { text-align: right; }
     </style>
 </head>
@@ -66,17 +67,17 @@ def html_section(name, array, sector, part_start=None, bs=None):
             continue
         t.append('<tr>')
         if this_is_empty:
-            t.append('<td>*</td>')
-            for j in range(22):
-                t.append('<td></td>')
+            t += add_indexes(bs, i, part_start, sector)
+            t.append('<td></td>')
+            for j in range(8):
+                t.append('<td class="center zero">*</td>')
+            t.append('<td></td>')
+            for j in range(8):
+                t.append('<td class="center zero">*</td>')
+            t.append('<td></td><td class="zero">................</td>')
             previous_was_empty = True
         else:
-            t.append('<td>%08X</td>' % (((sector + (part_start or 0)) * SECTOR_SZ) + (i * 16)))
-            if part_start == None:
-                t.append('<td></td><td></td>')
-            else:
-                t.append('<td class="right">%X</td>' % ((sector + (i * 16 // 512)) // bs.sectors_per_cluster))
-                t.append('<td class="right">%X</td>' % (sector + (i * 16 // 512)))
+            t += add_indexes(bs, i, part_start, sector)
             t.append('<td class="spacing"></td>')
             for j in range(16):
                 data = array[(i * 16) + j]
@@ -90,6 +91,17 @@ def html_section(name, array, sector, part_start=None, bs=None):
 
     t.append('</tbody></table>')
     print(''.join(t))
+
+
+def add_indexes(bs, i, part_start, sector):
+    t = []
+    t.append('<td>%08X</td>' % (((sector + (part_start or 0)) * SECTOR_SZ) + (i * 16)))
+    if part_start == None:
+        t.append('<td></td><td></td>')
+    else:
+        t.append('<td class="right">%X</td>' % ((sector + (i * 16 // 512)) // bs.sectors_per_cluster))
+        t.append('<td class="right">%X</td>' % (sector + (i * 16 // 512)))
+    return t
 
 
 #

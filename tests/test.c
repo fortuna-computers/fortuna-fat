@@ -548,16 +548,19 @@ static const Scenario layer0_scenarios[] = { scenario_raw_sectors, NULL };
 #if LAYER_IMPLEMENTED >= 1
 static const Scenario layer1_scenarios[] = {
         scenario_fat32,
+        /*
         scenario_fat32_align512,
         scenario_fat32_spc1,
         scenario_fat32_spc8,
         scenario_fat32_2_partitions,
         scenario_fat16,
+         */
         NULL
 };
 #endif
 
 static const Test test_list_[] = {
+        /*
         { "Layer 0: sector access", layer0_scenarios, test_raw_sector },
         { "Layer 0: sector past end of image", layer0_scenarios, test_raw_sector_past_end_of_image },
         { "Layer 0: I/O error", layer0_scenarios, test_raw_sector_io_error },
@@ -580,8 +583,11 @@ static const Test test_list_[] = {
 #if LAYER_IMPLEMENTED >= 2
         { "Layer 2: Adjust filename", layer0_scenarios, test_f_adjust_filename },
         { "Layer 2: F_MKDIR", layer1_scenarios, test_f_mkdir },
+         */
         { "Layer 2: F_MKDIR (many directories)", layer1_scenarios, test_f_mkdir_many },
+        /*
 #endif
+         */
         { NULL, NULL, NULL },
 };
 
