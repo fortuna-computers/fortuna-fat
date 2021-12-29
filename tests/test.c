@@ -313,7 +313,7 @@ static bool test_f_append_one_to_new_file(FFat* f, Scenario UNUSED scenario)
     return true;
 }
 
-static bool test_f_append_to_existing_file(FFat* f, UNUSED Scenario scenario)
+static bool test_f_append_to_existing_file(FFat* f, Scenario scenario)
 {
     uint32_t last_cluster;
     uint32_t file_cluster = add_tags_txt(&last_cluster);
@@ -335,6 +335,21 @@ static bool test_f_append_to_existing_file(FFat* f, UNUSED Scenario scenario)
     }
     
     return true;
+}
+
+static bool test_f_many_appends(FFat* f, Scenario scenario)
+{
+    const size_t append_count = 600;
+
+    // append several times
+    f->F_CLSTR = 0;
+    for (size_t i = 0; i < append_count; ++i) {
+        X_OK(ffat_op(f, F_APPEND))
+    }
+
+    // TODO - check FAT
+
+    return false;
 }
 
 static bool test_f_truncate_first_sector(FFat* f, UNUSED Scenario scenario)
@@ -506,7 +521,7 @@ static bool test_f_mkdir(FFat* f, UNUSED Scenario scenario)
 static bool test_f_mkdir_many(FFat* f, UNUSED Scenario scenario)
 {
     // size_t num_dirs = (f->F_TYPE == FAT16 ? f->F_ROOT_ENTR : 80);
-    size_t num_dirs = 65;
+    size_t num_dirs = 129;
 
     for (size_t i = 0; i < num_dirs; ++i) {
         sprintf((char *) f->buffer, "%zu", i);
@@ -547,19 +562,16 @@ static const Scenario layer0_scenarios[] = { scenario_raw_sectors, NULL };
 #if LAYER_IMPLEMENTED >= 1
 static const Scenario layer1_scenarios[] = {
         scenario_fat32,
-        /*
         scenario_fat32_align512,
         scenario_fat32_spc1,
         scenario_fat32_spc8,
         scenario_fat32_2_partitions,
         scenario_fat16,
-         */
         NULL
 };
 #endif
 
 static const Test test_list_[] = {
-        /*
         { "Layer 0: sector access", layer0_scenarios, test_raw_sector },
         { "Layer 0: sector past end of image", layer0_scenarios, test_raw_sector_past_end_of_image },
         { "Layer 0: I/O error", layer0_scenarios, test_raw_sector_io_error },
@@ -574,6 +586,7 @@ static const Test test_list_[] = {
         { "Layer 1: F_APPEND (create file)", layer1_scenarios, test_f_append_create_file },
         { "Layer 1: F_APPEND (append one to new file)", layer1_scenarios, test_f_append_one_to_new_file },
         { "Layer 1: F_APPEND (append to existing file)", layer1_scenarios, test_f_append_to_existing_file },
+        { "Layer 1: F_APPEND (many appends)", layer1_scenarios, test_f_many_appends },
         { "Layer 1: F_TRUNCATE (first sector)", layer1_scenarios, test_f_truncate_first_sector },
         { "Layer 1: F_TRUNCATE (3rd sector)", layer1_scenarios, test_f_truncate_3rd_sector },
         { "Layer 1: F_REMOVE", layer1_scenarios, test_f_remove },
@@ -582,11 +595,8 @@ static const Test test_list_[] = {
 #if LAYER_IMPLEMENTED >= 2
         { "Layer 2: Adjust filename", layer0_scenarios, test_f_adjust_filename },
         { "Layer 2: F_MKDIR", layer1_scenarios, test_f_mkdir },
-         */
-        { "Layer 2: F_MKDIR (many directories)", layer1_scenarios, test_f_mkdir_many },
-        /*
+        // { "Layer 2: F_MKDIR (many directories)", layer1_scenarios, test_f_mkdir_many },
 #endif
-         */
         { NULL, NULL, NULL },
 };
 

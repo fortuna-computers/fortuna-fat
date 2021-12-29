@@ -5,7 +5,7 @@
 #include "layer1.h"
 #include "layer0.h"
 
-#define TRY(expr) { FFatResult r = (expr); if (r != F_OK) return r; }
+#define TRY(expr) { FFatResult __r = (expr); if (__r != F_OK) return __r; }
 
 #define DIR_ENTRY_SZ 32
 
@@ -118,14 +118,14 @@ FFatResult f_adjust_filename(FFat* f)
 static FFatResult dir_parsing_next_sector(FFat* f, uint32_t* cluster, uint16_t* sector)
 {
     // go to next cluster/sector
-    if (*sector < f->F_SPC) {
+    if (*sector < f->F_SPC - 1) {
         ++(*sector);
     } else {
         f->F_CLSTR = *cluster;
         f->F_PARM = 1;
         FFatResult r = f_seek(f);    // advance to next cluster
         if (r == F_SEEK_PAST_EOF)    // if no next cluster, add a new one
-            f_append(f);
+            TRY(f_append(f))
         *cluster = f->F_CLSTR;
         *sector = 0;
     }
