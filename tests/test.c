@@ -254,10 +254,11 @@ static bool test_f_append_create_file(FFat* f, Scenario scenario)
     // create new FAT entry
     f->F_CLSTR = 0;
     X_OK(ffat_op(f, F_APPEND))
-    
+
     ASSERT(f->F_CLSTR > 1 && f->F_CLSTR < 100)
     
     // check if FAT entry was created with EOF
+    f->F_RAWSEC = f->F_ABS + f->F_FATST;
     X_OK(ffat_op(f, F_READ_RAW))
     if (scenario == scenario_fat16)
         ASSERT(*(uint16_t *) &f->buffer[f->F_CLSTR * 2] >= 0xfff8)
@@ -293,6 +294,7 @@ static bool test_f_append_one_to_new_file(FFat* f, Scenario UNUSED scenario)
     ASSERT(f->F_CLSTR > file_cluster)
     
     // check FAT
+    f->F_RAWSEC = f->F_ABS + f->F_FATST;
     X_OK(ffat_op(f, F_READ_RAW))
     if (scenario == scenario_fat16) {
         ASSERT(*(uint16_t *) &f->buffer[file_cluster * 2] == f->F_CLSTR)
@@ -322,6 +324,7 @@ static bool test_f_append_to_existing_file(FFat* f, UNUSED Scenario scenario)
     ASSERT(f->F_CLSTR > last_cluster)
     
     // check FAT
+    f->F_RAWSEC = f->F_ABS + f->F_FATST;
     X_OK(ffat_op(f, F_READ_RAW))
     if (scenario == scenario_fat16) {
         ASSERT(*(uint16_t *) &f->buffer[last_cluster * 2] == f->F_CLSTR)
@@ -545,19 +548,16 @@ static const Scenario layer0_scenarios[] = { scenario_raw_sectors, NULL };
 #if LAYER_IMPLEMENTED >= 1
 static const Scenario layer1_scenarios[] = {
         scenario_fat32,
-        /*
         scenario_fat32_align512,
         scenario_fat32_spc1,
         scenario_fat32_spc8,
         scenario_fat32_2_partitions,
         scenario_fat16,
-         */
         NULL
 };
 #endif
 
 static const Test test_list_[] = {
-        /*
         { "Layer 0: sector access", layer0_scenarios, test_raw_sector },
         { "Layer 0: sector past end of image", layer0_scenarios, test_raw_sector_past_end_of_image },
         { "Layer 0: I/O error", layer0_scenarios, test_raw_sector_io_error },
@@ -580,8 +580,6 @@ static const Test test_list_[] = {
 #if LAYER_IMPLEMENTED >= 2
         { "Layer 2: Adjust filename", layer0_scenarios, test_f_adjust_filename },
         { "Layer 2: F_MKDIR", layer1_scenarios, test_f_mkdir },
-         */
-#if 1 // TODO
         { "Layer 2: F_MKDIR (many directories)", layer1_scenarios, test_f_mkdir_many },
 #endif
         { NULL, NULL, NULL },

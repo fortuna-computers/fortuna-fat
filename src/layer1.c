@@ -1,6 +1,7 @@
 #include "layer1.h"
 
 #include <stddef.h>
+#include <string.h>
 
 #include "layer0.h"
 
@@ -233,8 +234,16 @@ static FFatResult fat_find_next_free_cluster(FFat* f, uint32_t start_at_cluster,
 // region -> FSINFO read/update
 
 #define FSINFO_SECTOR       1
+
+#define FSI_LEADSIG     0x0
+#define FSI_STRUCSIG    0x1e4
 #define FSI_FREE_COUNT  0x1e8
 #define FSI_NEXT_FREE   0x1ec
+#define FSI_TRAILSIG    0x1fc
+
+#define FSI_CONST_LEADSIG  0x41615252
+#define FSI_CONST_STRUCSIG 0x61417272
+#define FSI_CONST_TRAILSIG 0xaa550000
 
 typedef struct FFsInfo {
     uint32_t last_cluster_allocated;
@@ -245,17 +254,25 @@ static FFatResult load_fsinfo(FFat* f, FFsInfo* fs_info)
 {
     f->F_RAWSEC = f->F_ABS + FSINFO_SECTOR;
     TRY(f_raw_read(f))
-    fs_info->last_cluster_allocated = frombuf32(f->buffer, FSI_NEXT_FREE);
-    fs_info->free_clusters = frombuf32(f->buffer, FSI_FREE_COUNT);
+    if (fs_info) {
+        fs_info->last_cluster_allocated = frombuf32(f->buffer, FSI_NEXT_FREE);
+        fs_info->free_clusters = frombuf32(f->buffer, FSI_FREE_COUNT);
+    }
     return F_OK;
 }
 
 static FFatResult write_fsinfo(FFat* f, FFsInfo* fs_info)
 {
+    memset(f->buffer, 0, 512);
+    tobuf32(f->buffer, FSI_LEADSIG, FSI_CONST_LEADSIG);
+    tobuf32(f->buffer, FSI_STRUCSIG, FSI_CONST_STRUCSIG);
     tobuf32(f->buffer, FSI_FREE_COUNT, fs_info->free_clusters);
     tobuf32(f->buffer, FSI_NEXT_FREE, fs_info->last_cluster_allocated);
+    tobuf32(f->buffer, FSI_TRAILSIG, FSI_CONST_TRAILSIG);
+
     f->F_RAWSEC = f->F_ABS + FSINFO_SECTOR;
     TRY(f_raw_write(f))
+
     return F_OK;
 }
 
