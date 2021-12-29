@@ -225,7 +225,7 @@ if __name__ == '__main__':
 
         # Data clusters
         for cluster in clusters:
-            sector = bs.data_sec + (cluster * bs.sectors_per_cluster)
+            sector = bs.data_sec + ((cluster - 2) * bs.sectors_per_cluster)
             html_section('Data cluster 0x%X' % cluster, read(f, boot_sector_abs + sector, bs.sectors_per_cluster), sector, boot_sector_abs, bs)
 
     close_html()
